@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items version="2" >
+
+    <item
+        is-multidex="false"
+        jar="/home/tbiliyor/Desktop/XcVario/android-build/libs/QtAndroid-bundled.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="26.0.2"
+        sha1="187e26c92eb4ae075bf10e6fd8f2629203f4ab24">
+        <dex dex="/home/tbiliyor/Desktop/XcVario/android-build/build/intermediates/pre-dexed/debug/QtAndroid-bundled_735b78cb7dace325b830b64b826e672b6a9f14fc.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/home/tbiliyor/Desktop/XcVario/android-build/libs/QtMultimedia-bundled.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="26.0.2"
+        sha1="8ede3b0b6187f244fd2988930874eb99d9999124">
+        <dex dex="/home/tbiliyor/Desktop/XcVario/android-build/build/intermediates/pre-dexed/debug/QtMultimedia-bundled_6d2de6cbbf0a45a5d8c7faac904bfe8d80ce3878.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/home/tbiliyor/Desktop/XcVario/android-build/libs/QtPositioning-bundled.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="26.0.2"
+        sha1="736940362395f6784131932e57ad4d2dcbcd3d6f">
+        <dex dex="/home/tbiliyor/Desktop/XcVario/android-build/build/intermediates/pre-dexed/debug/QtPositioning-bundled_5c938d3329a939fd539f72414eefb28e7ba00327.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/home/tbiliyor/Desktop/XcVario/android-build/libs/QtAndroidBearer-bundled.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="26.0.2"
+        sha1="8050377f7cf453999b015b1e1700851bfadaabc4">
+        <dex dex="/home/tbiliyor/Desktop/XcVario/android-build/build/intermediates/pre-dexed/debug/QtAndroidBearer-bundled_056b8c219908d4d62a439a64b7843a82a3df55f1.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/home/tbiliyor/Desktop/XcVario/android-build/libs/QtSensors-bundled.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="26.0.2"
+        sha1="fbed9d3a51e685e8d578decc40bab019eaef856d">
+        <dex dex="/home/tbiliyor/Desktop/XcVario/android-build/build/intermediates/pre-dexed/debug/QtSensors-bundled_177919bced870aabfda380979537d1c3231562bb.jar" />
+    </item>
+
+</items>
