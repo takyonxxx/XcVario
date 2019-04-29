@@ -13,7 +13,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     setWindowTitle("XcVario");
 
-    path = qApp->applicationDirPath() + QString("/VarioLog/");
+    path = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + QString("/VarioLog/");
     QDir dir;
 
     // We create the directory if needed
