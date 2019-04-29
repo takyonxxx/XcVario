@@ -84,6 +84,7 @@ void VarioBeep::startBeep()
 {
     SetFrequency(m_toneSampleRateHz);
     m_running = true;
+    m_audioOutput->start();
     futureVario = QtConcurrent::run(std::bind(std::mem_fun(&VarioBeep::varioThread),this));}
 
 void VarioBeep::stopBeep()
@@ -124,7 +125,7 @@ void VarioBeep::SetFrequency(int freq)
 void VarioBeep::varioThread()
 {
     while (m_running)
-    {      
+    {
         if(m_vario >= 0.25)
         {
             if(m_vario > 0)

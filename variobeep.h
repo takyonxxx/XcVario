@@ -13,7 +13,7 @@
 #include <QtConcurrent>
 #include <piecewiselinearfunction.h>
 
-class Sleeper : public QThread
+class Sleeper
 {
 public:
     static void usleep(unsigned long usecs){QThread::usleep(usecs);}

@@ -23,8 +23,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->label_vario->setStyleSheet("font-size: 16pt; color: #cccccc; background-color: #001a1a;");
     ui->label_gps->setStyleSheet("font-size: 16pt; color: #cccccc; background-color: #001a1a;");
 
-    beep = new VarioBeep(750.0, static_cast<int>(DURATION_MS * 1000));
-    beep->setVolume(100);
+    varioBeep = new VarioBeep(750.0, static_cast<int>(DURATION_MS * 1000));
+    varioBeep->setVolume(100);
 
     //Sensors
     (void)QSensor::sensorTypes();
@@ -145,7 +145,7 @@ void MainWindow::sensor_changed()
         altitude_filter->Update(baroaltitude, KF_VAR_MEASUREMENT, dt);
         altitude = altitude_filter->GetXAbs();
         vario = altitude_filter->GetXVel();
-        beep->SetVario(vario,dt);
+        varioBeep->SetVario(vario, dt);
 
         fillVario(vario);
     }
@@ -313,14 +313,14 @@ QString MainWindow::decimalToDDDMMMMMLon(double angle)
 void MainWindow::on_buttonStart_clicked()
 {
     if (m_running) {
-        beep->stopBeep();
+        varioBeep->stopBeep();
         m_posSource->stopUpdates();
         m_running = false;
         ui->buttonStart->setText("Start");
     } else {
         m_posSource->startUpdates();
         m_running = true;
-        beep->startBeep();
+        varioBeep->startBeep();
         ui->buttonStart->setText("Stop");
     }
 }
@@ -333,6 +333,6 @@ void MainWindow::on_pushButton_exit_clicked()
 
 void MainWindow::exitApp()
 {
-    beep->stopBeep();
+    varioBeep->stopBeep();
     qApp->quit();
 }

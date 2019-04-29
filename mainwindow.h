@@ -59,7 +59,7 @@ public slots:
 
 private:
 
-    VarioBeep *beep;
+    VarioBeep *varioBeep;
 
     QGeoPositionInfoSource *m_posSource;
     QGeoPositionInfo m_gpsPos;
