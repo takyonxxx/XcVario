@@ -20,3 +20,8 @@ HEADERS  += \
 
 FORMS    += \
     mainwindow.ui
+
+RESOURCES += \
+    resources.qrc
+
+win32:RC_ICONS += $$PWD\appIcon.ico
