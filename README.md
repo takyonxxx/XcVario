@@ -5,4 +5,4 @@ App will need barometric and gps sensor on device.
 
 Record flight in igc format.
 
-Record path is /sdcard/XcVario
+Record path is appdir + VarioLog
