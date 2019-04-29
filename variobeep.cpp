@@ -16,7 +16,7 @@
 const int DataSampleRateHz = 44100;
 const int BufferSize      = 32768;
 
-VarioBeep::VarioBeep(qreal ToneSampleRateHz,int DurationUSeconds)
+VarioBeep::VarioBeep(int ToneSampleRateHz,int DurationUSeconds)
     :   m_device(QAudioDeviceInfo::defaultOutputDevice())
     ,   m_generator(nullptr)
     ,   m_audioOutput(nullptr)
@@ -106,7 +106,7 @@ void VarioBeep::setVolume(qreal volume)
 
 void VarioBeep::SetVario(qreal vario, qreal tdiff)
 {        
-    if(m_running && (m_vario != vario) )
+    if(m_running && !AreSame(m_vario , vario))
     {
         m_vario = vario;
         m_tdiff = tdiff;

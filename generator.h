@@ -13,7 +13,6 @@ class Generator : public QIODevice
 
 public:
     Generator(const QAudioFormat &format, qint64 durationUs, int sampleRate, QObject *parent);
-    ~Generator();
 
     void start();
     void stop();   
