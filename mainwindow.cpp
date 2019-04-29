@@ -140,7 +140,6 @@ void MainWindow::sensor_changed()
         vario = altitude_filter->GetXVel();
         beep->SetVario(vario,dt);
 
-        fillGps(dt,pressure,altitude,vario);
         fillVario(vario);
     }
     else
@@ -162,29 +161,6 @@ void MainWindow::fillVario(qreal vario)
 
 }
 
-void MainWindow::fillGps(qreal dt,qreal pressure,qreal altitude,qreal vario)
-{
-    if (m_gpsPos.hasAttribute(QGeoPositionInfo::Direction))
-    {
-        ui->label_vario->setText(
-                    "<span style='font-size:110pt; font-weight:600;'>"
-                    + QString::number(m_coord.altitude())
-                    + " / " +  QString::number(3.6 * m_gpsPos.attribute(QGeoPositionInfo::GroundSpeed))
-                    + "</span>"
-                    + "<span style='font-size:36pt; font-weight:600; color:#00cccc;'> m/s</span>"
-                    );
-
-    }
-
-    /*QString::number(pressure, 'f', 1)
-    QString::number(altitude, 'f', 1)
-    QString::number(vario, 'f', 2)
-    QString::number(m_gpsPos.attribute(QGeoPositionInfo::Direction));
-    QString::number(m_coord.altitude())
-    QString::number(3.6 * m_gpsPos.attribute(QGeoPositionInfo::GroundSpeed))*/
-}
-
-//////////////////////////////////
 
 void MainWindow::positionUpdated(QGeoPositionInfo gpsPos)
 {
@@ -200,6 +176,8 @@ void MainWindow::positionUpdated(QGeoPositionInfo gpsPos)
                 + dateTimeString + "</span>" + "<br />"
                 + "<span style='font-size:22pt; font-weight:600; color:white;'>Acc: "
                 + QString::number(horizontalAccuracy, 'f', 1) + " m</span>"
+                + "<span style='font-size:22pt; font-weight:600; color:white;'>BaroAlt: "
+                + QString::number(altitude, 'f', 1) + " m</span>"
                 );
 
     updateIGC();

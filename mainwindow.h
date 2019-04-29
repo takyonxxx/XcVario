@@ -35,8 +35,7 @@ public:
     ~MainWindow();
 
 private:
-    void showEvent(QShowEvent *event);
-    void fillGps(qreal dt,qreal pressure,qreal altitude,qreal vario);
+    void showEvent(QShowEvent *event);   
     void fillVario(qreal vario);
     void createTables();
     void updateIGC();
