@@ -10,6 +10,8 @@
 #include <QTimer>
 #include <QtMath>
 #include <QGeoPositionInfoSource>
+#include <QFileDialog>
+#include <QDesktopServices>
 #include <QDebug>
 
 #include <qsensor.h>
@@ -42,6 +44,7 @@ private:
     void createIgcHeader();
     QString decimalToDDDMMMMMLat(double angle);
     QString decimalToDDDMMMMMLon(double angle);
+    QString path;
 
 public slots:
     void positionUpdated(QGeoPositionInfo gpsPos);

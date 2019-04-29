@@ -13,6 +13,17 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     setWindowTitle("XcVario");
 
+    path = qApp->applicationDirPath() + QString("/VarioLog/");
+    QDir dir;
+
+    // We create the directory if needed
+    if (!dir.exists(path))
+        dir.mkpath(path); // You can check the success if needed
+
+    igcFile = new QFile();
+    igcFile->setFileName(path + "VarioLog.igc");
+    qDebug() << "Igc path: " << path;
+
     ui->label_vario->setStyleSheet("font-size: 16pt; color: #cccccc; background-color: #001a1a;");
     ui->label_gps->setStyleSheet("font-size: 16pt; color: #cccccc; background-color: #001a1a;");
 
@@ -88,7 +99,7 @@ void MainWindow::loadSensors()
                 if (!m_sensor->connectToBackend()) {
                     status.append("Can't connect to Backend sensor: " + sensor_type + "\n");
                     delete m_sensor;
-                    m_sensor = 0;
+                    m_sensor = nullptr;
                     return;
                 }
                 found = true;
@@ -125,7 +136,7 @@ void MainWindow::sensor_changed()
     pressure_reading = m_sensor->reading();
     dt = start.msecsTo(end) / 1000.;
 
-    if(pressure_reading != 0)
+    if(pressure_reading != nullptr)
     {
         pressure = pressure_reading->pressure();
         temperature = pressure_reading->temperature();
@@ -145,7 +156,6 @@ void MainWindow::sensor_changed()
     else
     {
         text_presssure = "\nSensor: UNAVAILABLE";
-        //ui->textBrowser_info->append(text_presssure);
     }
     oldaltitude = altitude;
     start = end;
@@ -160,7 +170,6 @@ void MainWindow::fillVario(qreal vario)
                 );
 
 }
-
 
 void MainWindow::positionUpdated(QGeoPositionInfo gpsPos)
 {
@@ -226,35 +235,37 @@ void MainWindow::updateIGC()
         createIgcHeader();
         createIgcFile = true;
     }
+    else
+    {
+        QDateTime timestamp = m_gpsPos.timestamp();
+        //QDateTime local = timestamp.toLocalTime();
+        QString dateTimeString = timestamp.toString("hhmmss");
 
-    QDateTime timestamp = m_gpsPos.timestamp();
-    //QDateTime local = timestamp.toLocalTime();
-    QString dateTimeString = timestamp.toString("hhmmss");
+        igcFile->open(QIODevice::Append | QIODevice::Text);
 
-    igcFile->open(QIODevice::Append | QIODevice::Text);
+        if(!igcFile->isOpen()){
+            qDebug() << "- Error, unable to open" << "outputFilename" << "for output";
+        }
 
-    if(!igcFile->isOpen()){
-        qDebug() << "- Error, unable to open" << "outputFilename" << "for output";
+        QTextStream out(igcFile);
+        QString str;
+
+        //B,110135,5206343N,00006198W,A,00587,00558
+
+        QString record  = "B";
+
+        record.append(dateTimeString);
+        record.append(decimalToDDDMMMMMLat(m_coord.latitude()));
+        record.append(decimalToDDDMMMMMLon(m_coord.longitude()));
+        record.append("A");
+        str.sprintf("%05d",(int)m_coord.altitude());
+        record.append(str);
+        str.sprintf("%05d",(int)altitude);
+        record.append(str);
+        out << record << endl;
+
+        igcFile->close();
     }
-
-    QTextStream out(igcFile);
-    QString str;
-
-    //B,110135,5206343N,00006198W,A,00587,00558
-
-    QString record  = "B";
-
-    record.append(dateTimeString);
-    record.append(decimalToDDDMMMMMLat(m_coord.latitude()));
-    record.append(decimalToDDDMMMMMLon(m_coord.longitude()));
-    record.append("A");
-    str.sprintf("%05d",(int)m_coord.altitude());
-    record.append(str);
-    str.sprintf("%05d",(int)altitude);
-    record.append(str);
-    out << record << endl;
-
-    igcFile->close();
 }
 
 void MainWindow::createIgcHeader()
@@ -279,6 +290,7 @@ void MainWindow::createIgcHeader()
     header.append("HFFTYFRTYPE: XcVario by Türkay Biliyor");
     out << header << endl;
     igcFile->close();
+    createIgcFile = true;
 }
 
 QString MainWindow::decimalToDDDMMMMMLat(double angle)
