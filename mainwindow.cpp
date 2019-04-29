@@ -36,10 +36,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(sensor, SIGNAL(availableSensorsChanged()), this, SLOT(loadSensors()));
 
     //Gps
-    qDebug() << "Available:" << QGeoPositionInfoSource::availableSources();
+    qDebug() << "Available Gps Sources:" << QGeoPositionInfoSource::availableSources();
     m_posSource = QGeoPositionInfoSource::createDefaultSource(this);
     if (!m_posSource)
-        qFatal("No Position Source created!");
+        qFatal("No Gps Position Source created!");
     else
     {
         connect(m_posSource, SIGNAL(positionUpdated(QGeoPositionInfo)),
@@ -50,12 +50,11 @@ MainWindow::MainWindow(QWidget *parent) :
 
         setInterval(0);
         QString availableSources;
-        availableSources.append("Available gps sources\n");
+        availableSources.append("Available gps sources:\n");
         QStringList posSourcesList = QGeoPositionInfoSource::availableSources();
-        qDebug() << "Position sources count: " << posSourcesList.count();
-        foreach (const QString &src, posSourcesList) {
-            qDebug() << "pos source in list: " << src;
-            availableSources.append(src);
+
+        foreach (const QString &src, posSourcesList) {           
+            availableSources.append(src + "\n");
         }
         ui->label_gps->setText(availableSources);
     }
@@ -75,7 +74,7 @@ void MainWindow::loadSensors()
 {
     QString status;
     bool found = false;
-    status.append("Searching sensors.");
+    status.append("Searching sensors...");
     status.append("\n");
     int count = 1;
 
