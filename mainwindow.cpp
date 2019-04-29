@@ -23,7 +23,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->label_vario->setStyleSheet("font-size: 16pt; color: #cccccc; background-color: #001a1a;");
     ui->label_gps->setStyleSheet("font-size: 16pt; color: #cccccc; background-color: #001a1a;");
 
-    varioBeep = new VarioBeep(750.0, static_cast<int>(DURATION_MS * 1000));
+    varioBeep = new VarioBeep(750.0, static_cast<int>(DURATION_MS * 1000), this);
     varioBeep->setVolume(100);
 
     //Sensors
@@ -169,18 +169,21 @@ void MainWindow::fillVario(qreal vario)
 
 void MainWindow::positionUpdated(QGeoPositionInfo gpsPos)
 {
+    //if(!m_coord.isValid())return;
+
     m_gpsPos = gpsPos;
     m_coord = gpsPos.coordinate();
-    QDateTime timestamp = gpsPos.timestamp();
-    QDateTime local = timestamp.toLocalTime();
-    qreal horizontalAccuracy = gpsPos.attribute(QGeoPositionInfo::HorizontalAccuracy);
-    QString dateTimeString = local.toString("hh : mm : ss");
+    auto timestamp = gpsPos.timestamp();
+    auto local = timestamp.toLocalTime();
+    auto gps_altitude = m_coord.altitude();
+    auto dateTimeString = local.toString("hh : mm : ss");
+    text_igc_name = "VarioLog_" + local.toString("dd_MM_yyyy__hh_mm_ss") + ".igc";
     //ui->label_time->setText(dateTimeString + "\nAcc: " + QString::number(horizontalAccuracy, 'f', 1) + " m");
     ui->label_gps->setText(
                 "<span style='font-size:22pt; font-weight:600;color:#ff6600;'>"
                 + dateTimeString + "</span>" + "<br />"
-                + "<span style='font-size:22pt; font-weight:600; color:white;'>Acc: "
-                + QString::number(horizontalAccuracy, 'f', 1) + " m</span>"
+                + "<span style='font-size:22pt; font-weight:600; color:white;'>Altitude: "
+                + QString::number(gps_altitude, 'f', 1) + " m</span>" + "<br />"
                 + "<span style='font-size:22pt; font-weight:600; color:white;'>BaroAlt: "
                 + QString::number(altitude, 'f', 1) + " m</span>"
                 );
@@ -245,7 +248,7 @@ void MainWindow::updateIGC()
 void MainWindow::createIgcHeader()
 {
     igcFile = new QFile();
-    igcFile->setFileName(path + "VarioLog.igc");
+    igcFile->setFileName(path + text_igc_name);
     qDebug() << "Igc path: " << path;
 
     igcFile->open(QIODevice::Append | QIODevice::Text);
@@ -312,16 +315,19 @@ QString MainWindow::decimalToDDDMMMMMLon(double angle)
 
 void MainWindow::on_buttonStart_clicked()
 {
-    if (m_running) {
+    if (m_running)
+    {
         varioBeep->stopBeep();
         m_posSource->stopUpdates();
-        m_running = false;
         ui->buttonStart->setText("Start");
-    } else {
+        m_running = false;
+    }
+    else
+    {
         m_posSource->startUpdates();
-        m_running = true;
         varioBeep->startBeep();
         ui->buttonStart->setText("Stop");
+        m_running = true;
     }
 }
 

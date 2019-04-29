@@ -16,13 +16,15 @@
 const int DataSampleRateHz = 44100;
 const int BufferSize      = 32768;
 
-VarioBeep::VarioBeep(int ToneSampleRateHz,int DurationUSeconds)
-    :   m_device(QAudioDeviceInfo::defaultOutputDevice())
+
+VarioBeep::VarioBeep(int ToneSampleRateHz,int DurationUSeconds, QObject *parent)
+    :   QObject (parent)
+    ,   m_device(QAudioDeviceInfo::defaultOutputDevice())
     ,   m_generator(nullptr)
     ,   m_audioOutput(nullptr)
     ,   m_buffer(BufferSize, 0)
     ,   m_vario(0.0)
-    ,   m_tone(0.0)      
+    ,   m_tone(0.0)
     ,   m_tdiff(0.0)
     ,   m_outputVolume(0.0)
     ,   m_running(false)
@@ -77,22 +79,26 @@ void VarioBeep::createAudioOutput()
 {
     delete m_audioOutput;
     m_audioOutput = nullptr;
-    m_audioOutput = new QAudioOutput(m_device, m_format, this);    
+    m_audioOutput = new QAudioOutput(m_device, m_format, this);
 }
 
 void VarioBeep::startBeep()
 {
+    if(timerID)
+         killTimer(timerID);
+
+    timerID = startTimer(0);
     SetFrequency(m_toneSampleRateHz);
     m_running = true;
-    m_audioOutput->start();
-    futureVario = QtConcurrent::run(std::bind(std::mem_fun(&VarioBeep::varioThread),this));}
+}
 
 void VarioBeep::stopBeep()
 {   
+   if(timerID)
+        killTimer(timerID);
+
     m_running = false;
     m_audioOutput->stop();
-    futureVario.cancel();
-    futureVario.waitForFinished();
 }
 
 void VarioBeep::resumeBeep()
@@ -117,36 +123,35 @@ void VarioBeep::SetVario(qreal vario, qreal tdiff)
 void VarioBeep::SetFrequency(int freq)
 {
     tmp = new Generator(m_format, static_cast<qint64>(m_durationUSeconds), freq, this);
-    tmp->start();   
+    tmp->start();
     delete m_generator;
     m_generator = tmp;
 }
 
-void VarioBeep::varioThread()
+void VarioBeep::timerEvent(QTimerEvent *event)
 {
-    while (m_running)
+    if(m_running && event->timerId() == timerID)
     {
-        if(m_vario >= 0.25)
+        if(m_vario > 0)
         {
-            if(m_vario > 0)
-            {
-                m_tone = static_cast<int>(m_toneFunction->getValue(m_vario));
-            }
-            else if(m_vario < 0)
-            {
-                m_tone = m_toneSampleRateHz;
-            }
-
-            tmp = new Generator(m_format, m_durationUSeconds, m_tone, this);
-            tmp->start();
-            delete m_generator;
-            m_generator = tmp;
-
-            m_audioOutput->start(m_generator);
-            Sleeper::msleep(static_cast<unsigned>(m_varioFunction->getValue(m_vario) * 1000));
-            m_audioOutput->suspend();
-            Sleeper::msleep(static_cast<unsigned>(m_varioFunction->getValue(m_vario) * 1000));
+            m_tone = static_cast<int>(m_toneFunction->getValue(m_vario));
         }
+        else if(m_vario < 0)
+        {
+            m_tone = m_toneSampleRateHz;
+        }
+
+        if(m_vario < 0.25) return;
+
+        tmp = new Generator(m_format, m_durationUSeconds, m_tone, this);
+        tmp->start();
+        delete m_generator;
+        m_generator = tmp;
+
+        m_audioOutput->start(m_generator);
+        Sleeper::msleep(static_cast<unsigned>(m_varioFunction->getValue(m_vario) * 1000));
+        m_audioOutput->suspend();
+        Sleeper::msleep(static_cast<unsigned>(m_varioFunction->getValue(m_vario) * 1000));
     }
 }
 

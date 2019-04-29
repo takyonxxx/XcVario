@@ -1,4 +1,4 @@
-QT += core gui sensors positioning multimedia widgets concurrent
+QT += core gui sensors positioning multimedia widgets
 
 TARGET = xcvario
 TEMPLATE = app

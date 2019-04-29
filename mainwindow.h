@@ -70,6 +70,7 @@ private:
     QPressureSensor *m_sensor;
     QPressureReading *pressure_reading;
     QString text_presssure;
+    QString text_igc_name;
     QDateTime start;
     QDateTime end;
 
