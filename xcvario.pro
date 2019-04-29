@@ -25,3 +25,7 @@ RESOURCES += \
     resources.qrc
 
 win32:RC_ICONS += $$PWD\appIcon.ico
+
+ios {
+QMAKE_INFO_PLIST = ios/Info.plist
+}

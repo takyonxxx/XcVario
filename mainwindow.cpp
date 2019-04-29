@@ -31,7 +31,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QSensor *sensor = new QSensor(QByteArray(), this);
     connect(sensor, SIGNAL(availableSensorsChanged()), this, SLOT(loadSensors()));
 
-    //Gps  
+    //Gps
     m_posSource = QGeoPositionInfoSource::createDefaultSource(this);
     if (!m_posSource)
         qFatal("No Gps Position Source created!");
@@ -48,7 +48,7 @@ MainWindow::MainWindow(QWidget *parent) :
         availableSources.append("Available gps sources:\n");
         QStringList posSourcesList = QGeoPositionInfoSource::availableSources();
 
-        foreach (const QString &src, posSourcesList) {           
+        foreach (const QString &src, posSourcesList) {
             availableSources.append(src + "\n");
         }
         ui->label_gps->setText(availableSources);
@@ -145,7 +145,7 @@ void MainWindow::sensor_changed()
         altitude_filter->Update(baroaltitude, KF_VAR_MEASUREMENT, dt);
         altitude = altitude_filter->GetXAbs();
         vario = altitude_filter->GetXVel();
-        varioBeep->SetVario(vario, dt);
+        varioBeep->SetVario(vario);
 
         fillVario(vario);
     }
@@ -169,7 +169,12 @@ void MainWindow::fillVario(qreal vario)
 
 void MainWindow::positionUpdated(QGeoPositionInfo gpsPos)
 {
-    //if(!m_coord.isValid())return;
+    if(!m_coord.isValid()) return;
+
+    // Get the current location coordinates
+    QGeoCoordinate geoCoordinate =  gpsPos.coordinate();
+    qreal latitude = geoCoordinate.latitude();
+    qreal longitude = geoCoordinate.longitude();
 
     m_gpsPos = gpsPos;
     m_coord = gpsPos.coordinate();
@@ -185,7 +190,9 @@ void MainWindow::positionUpdated(QGeoPositionInfo gpsPos)
                 + "<span style='font-size:22pt; font-weight:600; color:white;'>Altitude: "
                 + QString::number(gps_altitude, 'f', 1) + " m</span>" + "<br />"
                 + "<span style='font-size:22pt; font-weight:600; color:white;'>BaroAlt: "
-                + QString::number(altitude, 'f', 1) + " m</span>"
+                + QString::number(altitude, 'f', 1) + " m</span>" + "<br />"
+                + "<span style='font-size:22pt; font-weight:600; color:white;'>"
+                + QString("Latitude: %1 Longitude: %2").arg(latitude).arg(longitude) + "</span>"
                 );
 
     updateIGC();
@@ -325,6 +332,7 @@ void MainWindow::on_buttonStart_clicked()
     else
     {
         m_posSource->startUpdates();
+        varioBeep->SetVario(0.0);
         varioBeep->startBeep();
         ui->buttonStart->setText("Stop");
         m_running = true;
@@ -334,7 +342,7 @@ void MainWindow::on_buttonStart_clicked()
 
 void MainWindow::on_pushButton_exit_clicked()
 {
-   exitApp();
+    exitApp();
 }
 
 void MainWindow::exitApp()

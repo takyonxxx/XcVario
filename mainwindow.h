@@ -2,16 +2,15 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QGeoPositionInfoSource>
-#include <QTableWidget>
 #include <QPressureReading>
-#include <QDateTime>
-#include <QTableWidget>
-#include <QTimer>
-#include <QtMath>
+#include <QGeoPositionInfo>
 #include <QGeoPositionInfoSource>
-#include <QFileDialog>
-#include <QDesktopServices>
+#include <QStandardPaths>
+#include <QDateTime>
+#include <QtMath>
+#include <QFile>
+#include <QDir>
+#include <QTimer>
 #include <QDebug>
 
 #include <qsensor.h>

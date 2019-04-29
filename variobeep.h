@@ -1,15 +1,11 @@
 #ifndef AUDIOOUTPUT_H
 #define AUDIOOUTPUT_H
 
-#include <QtCore>
 #include <QObject>
 #include <generator.h>
 #include <QAudioOutput>
 #include <QByteArray>
 #include <QIODevice>
-#include <QLabel>
-#include <QMainWindow>
-#include <QPushButton>
 #include <QTimerEvent>
 #include <QThread>
 #include <piecewiselinearfunction.h>
@@ -41,7 +37,7 @@ public:
     void stopBeep();       
     void resumeBeep();
     void setVolume(qreal volume);  
-    void SetVario(qreal vario, qreal tdiff);
+    void SetVario(qreal vario);
     PiecewiseLinearFunction *m_varioFunction;
     PiecewiseLinearFunction *m_toneFunction;
 
@@ -60,7 +56,6 @@ private:
     QByteArray m_buffer;         
     qreal m_vario;
     int m_tone;
-    qreal m_tdiff;
     qreal m_outputVolume;
     bool m_running;
     int m_toneSampleRateHz;
