@@ -1,4 +1,0 @@
-#Fri Nov 03 15:59:07 EET 2017
-base.0=/home/tbiliyor/Desktop/XcVario/android-build/build/intermediates/transforms/dex/debug/folders/1000/1f/main
-renamed.0=classes.dex
-file.0=/home/tbiliyor/Desktop/XcVario/android-build/build/intermediates/transforms/dex/debug/folders/1000/1f/main/classes.dex

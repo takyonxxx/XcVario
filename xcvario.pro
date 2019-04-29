@@ -1,29 +1,22 @@
-QT       += core gui sensors positioning multimedia widgets concurrent
-QT += androidextras
+QT += core gui sensors positioning multimedia widgets concurrent
 
 TARGET = xcvario
 TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        widget.cpp \
     kalmanfilter.cpp \
+    mainwindow.cpp \
     variobeep.cpp \
     generator.cpp \
     piecewiselinearfunction.cpp
 
-HEADERS  += widget.h \
+HEADERS  += \
     kalmanfilter.h \
+    mainwindow.h \
     variobeep.h \
     generator.h \
     piecewiselinearfunction.h
 
-FORMS    += widget.ui
-
-DISTFILES += \
-    android-sources/AndroidManifest.xml
-
-ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android-sources
-winrt: WINRT_MANIFEST.capabilities_device += location
-
-
+FORMS    += \
+    mainwindow.ui

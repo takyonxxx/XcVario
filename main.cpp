@@ -25,7 +25,7 @@
 ** $QT_END_LICENSE$
 **
 ****************************************************************************/
-#include "widget.h"
+#include "mainwindow.h"
 #include <QLabel>
 
 #include <QApplication>
@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-    Widget *w = new Widget;
+    MainWindow *w = new MainWindow;
     w->show();
     return a.exec();
 }
