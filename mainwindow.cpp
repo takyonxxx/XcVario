@@ -23,7 +23,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->label_vario->setStyleSheet("font-size: 16pt; color: #cccccc; background-color: #001a1a;");
     ui->label_gps->setStyleSheet("font-size: 16pt; color: #cccccc; background-color: #001a1a;");
 
-    beep = new VarioBeep(750.0, DURATION_MS * 1000.0);
+    beep = new VarioBeep(750.0, static_cast<int>(DURATION_MS * 1000));
     beep->setVolume(100);
 
     //Sensors
@@ -139,8 +139,10 @@ void MainWindow::sensor_changed()
         pressure_filter->Update(pressure,KF_VAR_MEASUREMENT,dt);
         pressure = pressure_filter->GetXAbs();
 
-        baroaltitude = 44330.0 * (1.0 - powf(pressure /sealevel, 0.19));
-        altitude_filter->Update(baroaltitude,KF_VAR_MEASUREMENT,dt);
+        auto ratioPS = static_cast<float>(pressure / sealevel);
+
+        baroaltitude = 44330.0 * (1.0 - static_cast<qreal>(powf(static_cast<float>(ratioPS), static_cast<float>(0.19f))));
+        altitude_filter->Update(baroaltitude, KF_VAR_MEASUREMENT, dt);
         altitude = altitude_filter->GetXAbs();
         vario = altitude_filter->GetXVel();
         beep->SetVario(vario,dt);
@@ -196,28 +198,6 @@ void MainWindow::setInterval(int msec)
     m_posSource->setUpdateInterval(msec);
 }
 
-void MainWindow::on_buttonStart_clicked()
-{
-    if (m_running) {
-        beep->stopBeep();
-        m_posSource->stopUpdates();
-        m_running = false;
-        ui->buttonStart->setText("Start");
-    } else {
-        m_posSource->startUpdates();
-        m_running = true;
-        beep->startBeep();
-        ui->buttonStart->setText("Stop");
-    }
-}
-
-
-void MainWindow::on_pushButton_exit_clicked()
-{
-    beep->stopBeep();
-    exit(0);
-}
-
 //gps
 void MainWindow::updateIGC()
 {
@@ -252,9 +232,9 @@ void MainWindow::updateIGC()
         record.append(decimalToDDDMMMMMLat(m_coord.latitude()));
         record.append(decimalToDDDMMMMMLon(m_coord.longitude()));
         record.append("A");
-        str.sprintf("%05d",(int)m_coord.altitude());
+        str.sprintf("%05d",static_cast<int>(m_coord.altitude()));
         record.append(str);
-        str.sprintf("%05d",(int)altitude);
+        str.sprintf("%05d",static_cast<int>(altitude));
         record.append(str);
         out << record << endl;
 
@@ -299,9 +279,9 @@ QString MainWindow::decimalToDDDMMMMMLat(double angle)
         hemisphere = "N";
     }
 
-    int degree = (int) angle;
-    double minutes = (angle - (float)degree) * 60.f;
-    strdegree.sprintf("%02d",(int)degree);
+    auto degree = static_cast<int>(angle);
+    auto minutes = (angle - degree) * static_cast<qreal>(60.0f);
+    strdegree.sprintf("%02d",static_cast<int>(degree));
     strminutes.sprintf("%2.3f",minutes);
     output = strdegree + strminutes.remove(".") + hemisphere;
 
@@ -320,12 +300,39 @@ QString MainWindow::decimalToDDDMMMMMLon(double angle)
         hemisphere = "E";
     }
 
-    int degree = (int) angle;
-    double minutes = (angle - (float)degree) * 60.f;
-    strdegree.sprintf("%03d",(int)degree);
+    auto degree =static_cast<int>(angle);
+    double minutes = (angle - degree) * static_cast<qreal>(60.f);
+    strdegree.sprintf("%03d",static_cast<int>(degree));
     strminutes.sprintf("%2.3f",minutes);
     output = strdegree + strminutes.remove(".") + hemisphere;
 
     //int seconds = (int)(angle - (float)degree - (float)minutes/60.f) * 60.f * 60.f); // ignore this line if you don't need seconds
     return output;
+}
+
+void MainWindow::on_buttonStart_clicked()
+{
+    if (m_running) {
+        beep->stopBeep();
+        m_posSource->stopUpdates();
+        m_running = false;
+        ui->buttonStart->setText("Start");
+    } else {
+        m_posSource->startUpdates();
+        m_running = true;
+        beep->startBeep();
+        ui->buttonStart->setText("Stop");
+    }
+}
+
+
+void MainWindow::on_pushButton_exit_clicked()
+{
+   exitApp();
+}
+
+void MainWindow::exitApp()
+{
+    beep->stopBeep();
+    qApp->quit();
 }

@@ -11,7 +11,7 @@ PiecewiseLinearFunction::PiecewiseLinearFunction()
 
 void PiecewiseLinearFunction::addNewPoint(QPointF point)
 {
-    if (point.x() == 0|| point.y() == 0) {
+    if (point.x() == 0.0 || point.y() == 0.0) {
         return;
     } else if (points.size() == 0) {
         points.push_back(point);
@@ -45,7 +45,7 @@ qreal PiecewiseLinearFunction::getValue(qreal x)
         }
         lastPoint = point;
     }
-    return lastPoint.y();
+    return static_cast<qreal>(lastPoint.y());
 }
 
 

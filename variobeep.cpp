@@ -13,21 +13,19 @@
 #define RESUME_LABEL    "Resume playback"
 #define VOLUME_LABEL    "Volume:"
 
-const int DurationSeconds = 1;
 const int DataSampleRateHz = 44100;
 const int BufferSize      = 32768;
-static const unsigned int SLEEP_PERIOD = 1000;
 
-VarioBeep::VarioBeep(qreal ToneSampleRateHz,qreal DurationUSeconds)
+VarioBeep::VarioBeep(qreal ToneSampleRateHz,int DurationUSeconds)
     :   m_device(QAudioDeviceInfo::defaultOutputDevice())
-    ,   m_generator(0)
-    ,   m_audioOutput(0)
+    ,   m_generator(nullptr)
+    ,   m_audioOutput(nullptr)
     ,   m_buffer(BufferSize, 0)
     ,   m_vario(0.0)
-    ,   m_tone(0.0)
-    ,   m_running(false)
-    ,   m_outputVolume(0.0)
+    ,   m_tone(0.0)      
     ,   m_tdiff(0.0)
+    ,   m_outputVolume(0.0)
+    ,   m_running(false)
     ,   m_toneSampleRateHz(0)
     ,   m_durationUSeconds(0)
 {
@@ -78,7 +76,7 @@ void VarioBeep::initializeAudio()
 void VarioBeep::createAudioOutput()
 {
     delete m_audioOutput;
-    m_audioOutput = 0;
+    m_audioOutput = nullptr;
     m_audioOutput = new QAudioOutput(m_device, m_format, this);    
 }
 
@@ -103,21 +101,21 @@ void VarioBeep::resumeBeep()
 
 void VarioBeep::setVolume(qreal volume)
 {
-    m_audioOutput->setVolume(qreal(volume/100.0f));
+    m_audioOutput->setVolume(static_cast<qreal>(volume / 100));
 }
 
 void VarioBeep::SetVario(qreal vario, qreal tdiff)
 {        
-    if(m_vario != vario && m_running)
+    if(m_running && (m_vario != vario) )
     {
         m_vario = vario;
         m_tdiff = tdiff;
     }
 }
 
-void VarioBeep::SetFrequency(qreal value)
+void VarioBeep::SetFrequency(int freq)
 {
-    tmp = new Generator(m_format, m_durationUSeconds, value, this);
+    tmp = new Generator(m_format, static_cast<qint64>(m_durationUSeconds), freq, this);
     tmp->start();   
     delete m_generator;
     m_generator = tmp;
@@ -131,14 +129,12 @@ void VarioBeep::varioThread()
         {
             if(m_vario > 0)
             {
-                m_tone = m_toneFunction->getValue(m_vario);
+                m_tone = static_cast<int>(m_toneFunction->getValue(m_vario));
             }
             else if(m_vario < 0)
             {
                 m_tone = m_toneSampleRateHz;
             }
-
-           // qDebug() << "Vario: " << m_vario <<  " Delay: " << QString::number(m_varioFunction->getValue(m_vario),'f', 2) << " Tone: " << QString::number(m_tone,'f', 2) ;
 
             tmp = new Generator(m_format, m_durationUSeconds, m_tone, this);
             tmp->start();
@@ -146,9 +142,9 @@ void VarioBeep::varioThread()
             m_generator = tmp;
 
             m_audioOutput->start(m_generator);
-            Sleeper::msleep(m_varioFunction->getValue(m_vario) * 1000);
+            Sleeper::msleep(static_cast<unsigned>(m_varioFunction->getValue(m_vario) * 1000));
             m_audioOutput->suspend();
-            Sleeper::msleep(m_varioFunction->getValue(m_vario) * 1000);
+            Sleeper::msleep(static_cast<unsigned>(m_varioFunction->getValue(m_vario) * 1000));
         }
     }
 }

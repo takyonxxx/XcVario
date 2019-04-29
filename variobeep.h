@@ -67,7 +67,7 @@ class VarioBeep : public QMainWindow
     Q_OBJECT
 
 public:
-    VarioBeep(qreal ToneSampleRateHz,qreal DurationUSeconds);
+    VarioBeep(qreal ToneSampleRateHz, int DurationUSeconds);
     ~VarioBeep();
 
     void startBeep();
@@ -82,7 +82,7 @@ private:
     void varioThread();
     void initializeAudio();
     void createAudioOutput();
-    void SetFrequency(qreal value);
+    void SetFrequency(int freq);
 
 private:     
     QAudioDeviceInfo m_device;   
@@ -92,12 +92,12 @@ private:
     QAudioFormat m_format;
     QByteArray m_buffer;         
     qreal m_vario;
-    qreal m_tone;
+    int m_tone;
     qreal m_tdiff;
     qreal m_outputVolume;
     bool m_running;
-    qreal m_toneSampleRateHz;
-    qreal m_durationUSeconds;
+    int m_toneSampleRateHz;
+    int m_durationUSeconds;
     QFuture<void> futureVario;
 };
 

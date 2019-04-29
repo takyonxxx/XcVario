@@ -55,6 +55,7 @@ public slots:
 
     void on_buttonStart_clicked();
     void on_pushButton_exit_clicked();
+    void exitApp();
 
 private:
 
