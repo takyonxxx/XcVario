@@ -20,10 +20,6 @@ MainWindow::MainWindow(QWidget *parent) :
     if (!dir.exists(path))
         dir.mkpath(path); // You can check the success if needed
 
-    igcFile = new QFile();
-    igcFile->setFileName(path + "VarioLog.igc");
-    qDebug() << "Igc path: " << path;
-
     ui->label_vario->setStyleSheet("font-size: 16pt; color: #cccccc; background-color: #001a1a;");
     ui->label_gps->setStyleSheet("font-size: 16pt; color: #cccccc; background-color: #001a1a;");
 
@@ -35,8 +31,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QSensor *sensor = new QSensor(QByteArray(), this);
     connect(sensor, SIGNAL(availableSensorsChanged()), this, SLOT(loadSensors()));
 
-    //Gps
-    qDebug() << "Available Gps Sources:" << QGeoPositionInfoSource::availableSources();
+    //Gps  
     m_posSource = QGeoPositionInfoSource::createDefaultSource(this);
     if (!m_posSource)
         qFatal("No Gps Position Source created!");
@@ -269,14 +264,15 @@ void MainWindow::updateIGC()
 
 void MainWindow::createIgcHeader()
 {
+    igcFile = new QFile();
+    igcFile->setFileName(path + "VarioLog.igc");
+    qDebug() << "Igc path: " << path;
+
     igcFile->open(QIODevice::Append | QIODevice::Text);
 
     if(!igcFile->isOpen()){
         qDebug() << "- Error, unable to open" << "outputFilename" << "for output";
     }
-
-    QFileInfo fileInfo(igcFile->fileName());
-    qDebug() << "igc file path: " << fileInfo.absoluteFilePath();
 
     QTextStream out(igcFile);
 
