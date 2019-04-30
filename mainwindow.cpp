@@ -17,7 +17,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
 #ifdef Q_OS_ANDROID
-     path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + QString("/VarioLog/");
+    path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + QString("/VarioLog/");
 #endif
 
 #ifdef Q_OS_WIN
