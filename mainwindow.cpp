@@ -463,7 +463,23 @@ void MainWindow::exitApp()
 
 void MainWindow::on_buttonFile_clicked()
 {
-    auto fileName = QFileDialog::getOpenFileName(this, tr("Open Igc"), path, tr("Igc Files (*.igc)"));
+    /*auto fileName = QFileDialog::getOpenFileName(this, tr("Open Igc"), path, tr("Igc Files (*.igc)"));
     QFileInfo info(fileName);
     QFile igcFile(fileName);
+    igcFile.remove();*/
+    QFileDialog dialog;
+    dialog.setOption(QFileDialog::DontUseNativeDialog);
+
+    QWidget * fileNameEdit = dialog.findChild<QWidget *>("fileNameEdit");
+    //QWidget * fileNameEdit = dialog.findChild<QWidget *>(QStringLiteral("fileNameEdit"));
+    Q_ASSERT(fileNameEdit);
+    fileNameEdit->setVisible(false);
+    QWidget * fileNameLabel = dialog.findChild<QWidget *>("fileNameLabel");
+    fileNameLabel->setVisible(false);
+    QWidget * buttonBox = dialog.findChild<QWidget *>("buttonBox");
+    buttonBox->setVisible(false);
+
+    auto fileName = dialog.getOpenFileName(this, tr("Open Igc"), path, tr("Igc Files (*.igc)"));
+    QFile igcFile(fileName);
+    igcFile.remove();
 }
