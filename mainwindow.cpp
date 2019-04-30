@@ -17,7 +17,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
 #ifdef Q_OS_ANDROID
-     path = QStandardPaths::writableLocation(QStandardPaths::HomeLocation) + QString("/VarioLog/");
+     path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + QString("/VarioLog/");
 #endif
 
 #ifdef Q_OS_WIN
@@ -25,13 +25,10 @@ MainWindow::MainWindow(QWidget *parent) :
 #endif
 
 #ifdef Q_OS_IOS
-    path = QStandardPaths::writableLocation(QStandardPaths::HomeLocation) + QString("/VarioLog/");
+    path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + QString("/VarioLog/");
 #endif
 
-    qDebug() << path;
-
     QDir dir;
-
     // We create the directory if needed
     if (!dir.exists(path))
         dir.mkpath(path); // You can check the success if needed
