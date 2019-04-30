@@ -254,7 +254,7 @@ void MainWindow::positionUpdated(QGeoPositionInfo gpsPos)
 
     if(!m_start)
     {
-        m_startCoord = gpsPos.coordinate();
+        m_startCoord = m_coord;
         m_start = true;
     }
 
@@ -263,16 +263,27 @@ void MainWindow::positionUpdated(QGeoPositionInfo gpsPos)
         distance = m_coord.distanceTo(m_startCoord);
     }
 
-    auto m_latitude = m_gpsPos.coordinate().latitude();
-    auto m_longitude = m_gpsPos.coordinate().longitude();
-    auto m_altitude = m_gpsPos.coordinate().altitude();
+    auto m_latitude = m_coord.latitude();
+    auto m_longitude = m_coord.longitude();
+    auto m_altitude = m_coord.altitude();
 
     auto m_direction = m_gpsPos.attribute(QGeoPositionInfo::Direction);
-    auto m_groundSpeed = m_gpsPos.attribute(QGeoPositionInfo::GroundSpeed);
+    if(IsNan(static_cast<float>(m_direction))) m_direction = 0;
+
+    auto m_groundSpeed = 3.6 * m_gpsPos.attribute(QGeoPositionInfo::GroundSpeed);
+     if(IsNan(static_cast<float>(m_groundSpeed))) m_groundSpeed = 0;
+
     auto m_verticalSpeed = m_gpsPos.attribute(QGeoPositionInfo::VerticalSpeed);
+     if(IsNan(static_cast<float>(m_verticalSpeed))) m_verticalSpeed = 0;
+
     auto m_horizontalAccuracy = m_gpsPos.attribute(QGeoPositionInfo::HorizontalAccuracy);
+     if(IsNan(static_cast<float>(m_horizontalAccuracy))) m_horizontalAccuracy = 0;
+
     auto m_verticalAccuracy = m_gpsPos.attribute(QGeoPositionInfo::VerticalAccuracy);
+     if(IsNan(static_cast<float>(m_verticalAccuracy))) m_verticalAccuracy = 0;
+
     auto m_magneticVariation = m_gpsPos.attribute(QGeoPositionInfo::MagneticVariation);
+     if(IsNan(static_cast<float>(m_magneticVariation))) m_magneticVariation = 0;
 
     auto timestamp = gpsPos.timestamp();
     auto local = timestamp.toLocalTime();
@@ -289,7 +300,7 @@ void MainWindow::positionUpdated(QGeoPositionInfo gpsPos)
                 + "<span style='font-size:22pt; font-weight:600; color:white;'>Heading: "
                 + QString::number(m_direction, 'f', 0) + QObject::tr(" °") + "</span>" + "<br />"
                 + "<span style='font-size:22pt; font-weight:600; color:white;'>Distance: "
-                + QString::number(distance / 1000, 'f', 1) + " km</span>" + "<br />"
+                + QString::number(distance / 1000., 'f', 1) + " km</span>" + "<br />"
                 + "<span style='font-size:18pt; font-weight:600; color:#ff6600;'>"
                 + QString("Latitude: %1").arg(m_latitude) + "</span>" + "<br />"
                 + "<span style='font-size:18pt; font-weight:600; color:#ff6600;'>"
