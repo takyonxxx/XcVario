@@ -17,16 +17,18 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
 #ifdef Q_OS_ANDROID
-     path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + QString("/VarioLog/");
+     path = QStandardPaths::writableLocation(QStandardPaths::HomeLocation) + QString("/VarioLog/");
 #endif
 
 #ifdef Q_OS_WIN
-    path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + QString("/VarioLog/");
+    path = QStandardPaths::writableLocation(QStandardPaths::HomeLocation) + QString("/VarioLog/");
 #endif
 
 #ifdef Q_OS_IOS
-    path = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + QString("/VarioLog/");
+    path = QStandardPaths::writableLocation(QStandardPaths::HomeLocation) + QString("/VarioLog/");
 #endif
+
+    qDebug() << path;
 
     QDir dir;
 
@@ -54,19 +56,6 @@ MainWindow::MainWindow(QWidget *parent) :
     }
     else
     {
-        QGeoSatelliteInfoSource *satelliteSource = QGeoSatelliteInfoSource::createDefaultSource(this);
-        if(satelliteSource)
-        {
-            QStringList sourcesList = QGeoSatelliteInfoSource::availableSources();
-            qDebug() << "Satellites sources count: " << sourcesList.count();
-            foreach (const QString &src, sourcesList) {
-                qDebug() << "source in list: " << src;
-            }
-
-            satelliteSource->startUpdates();
-            connect(satelliteSource, &QGeoSatelliteInfoSource::satellitesInViewUpdated,
-                    this, &MainWindow::satellitesInViewUpdated);
-        }
 
         m_posSource->setPreferredPositioningMethods(QGeoPositionInfoSource::AllPositioningMethods);
 
@@ -87,6 +76,19 @@ MainWindow::MainWindow(QWidget *parent) :
         }
         ui->label_gps->setText(status);
 
+        QGeoSatelliteInfoSource *satelliteSource = QGeoSatelliteInfoSource::createDefaultSource(this);
+        if(satelliteSource)
+        {
+            QStringList sourcesList = QGeoSatelliteInfoSource::availableSources();
+            qDebug() << "Satellites sources count: " << sourcesList.count();
+            foreach (const QString &src, sourcesList) {
+                qDebug() << "source in list: " << src;
+            }
+
+            satelliteSource->startUpdates();
+            connect(satelliteSource, &QGeoSatelliteInfoSource::satellitesInViewUpdated,
+                    this, &MainWindow::satellitesInViewUpdated);
+        }
     }
 }
 
@@ -220,16 +222,30 @@ static QString satellitesToString(const QList<QGeoSatelliteInfo> &satellites)
 
 void MainWindow::satellitesInUseUpdated(const QList<QGeoSatelliteInfo> &satellites)
 {
+    if(satellites.size() == 0)
+        return;
+
     qDebug() << tr("satellitesInUseUpdated received");
 
-    ui->label_gps->setText(tr("Satellites In Use\n%1").arg(satellitesToString(satellites)));
+    QString status;
+    status.append("<span style='font-size:18pt; font-weight:600;color:#00cccc;'>Satellites In Use:</span><br />");
+    status.append(satellitesToString(satellites));
+
+    ui->label_gps->setText(status);
 }
 
 void MainWindow::satellitesInViewUpdated(const QList<QGeoSatelliteInfo> &satellites)
 {
+    if(satellites.size() == 0)
+        return;
+
     qDebug() << tr("satellitesInViewUpdated received");
 
-    ui->label_gps->setText(tr("Satellites In View\n%1").arg(satellitesToString(satellites)));
+    QString status;
+    status.append("<span style='font-size:18pt; font-weight:600;color:#00cccc;'>Satellites In View:</span><br />");
+    status.append(satellitesToString(satellites));
+
+    ui->label_gps->setText(status);
 }
 
 void MainWindow::positionUpdated(QGeoPositionInfo gpsPos)
