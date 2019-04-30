@@ -33,25 +33,29 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //Gps
     m_posSource = QGeoPositionInfoSource::createDefaultSource(this);
+
     if (!m_posSource)
-        qFatal("No Gps Position Source created!");
+    {
+        ui->label_gps->setText("No Gps Position Source created!");
+    }
     else
     {
-        connect(m_posSource, SIGNAL(positionUpdated(QGeoPositionInfo)),
-                this, SLOT(positionUpdated(QGeoPositionInfo)));
+        connect(m_posSource, &QGeoPositionInfoSource::positionUpdated, this, &MainWindow::positionUpdated);
 
         connect(m_posSource, SIGNAL(error(QGeoPositionInfoSource::Error)),
                 this, SLOT(errorChanged(QGeoPositionInfoSource::Error)));
 
-        setInterval(0);
-        QString availableSources;
-        availableSources.append("Available gps sources:\n");
+        m_posSource->setUpdateInterval(0);
+
+        QString status;
+        status.append("<span style='font-size:18pt; font-weight:600;color:#00cccc;'>Available gps sources:</span><br />");
         QStringList posSourcesList = QGeoPositionInfoSource::availableSources();
+        int count = 1;
 
         foreach (const QString &src, posSourcesList) {
-            availableSources.append(src + "\n");
+            status.append(QString::number(count) + " - " + src + "<br />");
         }
-        ui->label_gps->setText(availableSources);
+        ui->label_gps->setText(status);
     }
 }
 
@@ -69,8 +73,8 @@ void MainWindow::loadSensors()
 {
     QString status;
     bool found = false;
-    status.append("Searching sensors...");
-    status.append("\n");
+    status.append("<span style='font-size:18pt; font-weight:600;color:#00cccc;'>Available sensors:</span><br />");
+
     int count = 1;
 
     foreach (const QByteArray &type, QSensor::sensorTypes()) {
@@ -84,14 +88,14 @@ void MainWindow::loadSensors()
             }
 
             QString sensor_type = type;
-            status.append(QString::number(count) + " - " + sensor_type + "\n");
+            status.append(QString::number(count) + " - " + sensor_type + "<br />");
             if(sensor_type.contains("Pressure"))
             {
                 m_sensor = new QPressureSensor(this);
                 connect(m_sensor, SIGNAL(readingChanged()), this, SLOT(sensor_changed()));
                 m_sensor->setIdentifier(identifier);
                 if (!m_sensor->connectToBackend()) {
-                    status.append("Can't connect to Backend sensor: " + sensor_type + "\n");
+                    status.append("Can't connect to Backend sensor: " + sensor_type + "<br />");
                     delete m_sensor;
                     m_sensor = nullptr;
                     return;
@@ -99,7 +103,7 @@ void MainWindow::loadSensors()
                 found = true;
                 if(m_sensor->start())
                 {
-                    status.append(sensor_type + " started succesfully.\n");
+                    status.append(sensor_type + " started succesfully.<br />");
                     start = QDateTime::currentDateTime();
                     pressure_filter = new KalmanFilter(KF_VAR_ACCEL);
                     pressure_filter->Reset(pressure);
@@ -169,8 +173,6 @@ void MainWindow::fillVario(qreal vario)
 
 void MainWindow::positionUpdated(QGeoPositionInfo gpsPos)
 {
-    if(!m_coord.isValid()) return;
-
     // Get the current location coordinates
     QGeoCoordinate geoCoordinate =  gpsPos.coordinate();
     qreal latitude = geoCoordinate.latitude();
@@ -189,10 +191,12 @@ void MainWindow::positionUpdated(QGeoPositionInfo gpsPos)
                 + dateTimeString + "</span>" + "<br />"
                 + "<span style='font-size:22pt; font-weight:600; color:white;'>Altitude: "
                 + QString::number(gps_altitude, 'f', 1) + " m</span>" + "<br />"
-                + "<span style='font-size:22pt; font-weight:600; color:white;'>BaroAlt: "
-                + QString::number(altitude, 'f', 1) + " m</span>" + "<br />"
-                + "<span style='font-size:22pt; font-weight:600; color:white;'>"
-                + QString("Latitude: %1 Longitude: %2").arg(latitude).arg(longitude) + "</span>"
+                + "<span style='font-size:22pt; font-weight:600; color:white;'>Pressure: "
+                + QString::number(pressure * 0.01, 'f', 1) + " hPa</span>" + "<br />"
+                + "<span style='font-size:18pt; font-weight:600; color:#ff6600;;'>"
+                + QString("Latitude: %1").arg(latitude) + "</span>" + "<br />"
+                + "<span style='font-size:18pt; font-weight:600; color:#ff6600;;'>"
+                + QString("Longitude: %1").arg(longitude) + "</span>"
                 );
 
     updateIGC();
@@ -327,6 +331,15 @@ void MainWindow::on_buttonStart_clicked()
         varioBeep->stopBeep();
         m_posSource->stopUpdates();
         ui->buttonStart->setText("Start");
+        QString status;
+        status.append("<span style='font-size:18pt; font-weight:600;color:#00cccc;'>Available gps sources:</span><br />");
+        QStringList posSourcesList = QGeoPositionInfoSource::availableSources();
+        int count = 1;
+
+        foreach (const QString &src, posSourcesList) {
+            status.append(QString::number(count) + " - " + src + "<br />");
+        }
+        ui->label_gps->setText(status);
         m_running = false;
     }
     else
