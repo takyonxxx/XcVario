@@ -95,7 +95,6 @@ MainWindow::~MainWindow()
     {
         igcFile->close();
     }
-
     delete ui;
 }
 
@@ -464,6 +463,7 @@ void MainWindow::exitApp()
 
 void MainWindow::on_buttonFile_clicked()
 {
-    auto fileName = QFileDialog::getOpenFileName(this,
-        tr("Open Igc"), path, tr("Igc Files (*.igc)"));
+    auto fileName = QFileDialog::getOpenFileName(this, tr("Open Igc"), path, tr("Igc Files (*.igc)"));
+    QFileInfo info(fileName);
+    QFile igcFile(fileName);
 }
