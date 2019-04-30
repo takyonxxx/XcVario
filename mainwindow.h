@@ -13,6 +13,7 @@
 #include <QFile>
 #include <QDir>
 #include <QTimer>
+#include <QFileDialog>
 #include <QDebug>
 
 #include <qsensor.h>
@@ -64,6 +65,9 @@ public slots:
     void on_buttonStart_clicked();
     void on_pushButton_exit_clicked();
     void exitApp();
+
+private slots:
+    void on_buttonFile_clicked();
 
 private:
 

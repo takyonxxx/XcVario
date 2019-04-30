@@ -461,3 +461,9 @@ void MainWindow::exitApp()
     varioBeep->stopBeep();
     qApp->quit();
 }
+
+void MainWindow::on_buttonFile_clicked()
+{
+    auto fileName = QFileDialog::getOpenFileName(this,
+        tr("Open Igc"), path, tr("Igc Files (*.igc)"));
+}
