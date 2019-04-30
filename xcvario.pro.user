@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.9.0, 2019-04-30T19:00:42. -->
+<!-- Written by QtCreator 4.9.0, 2019-05-01T00:16:03. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -319,7 +319,7 @@
      <value type="int" key="type">0</value>
     </valuemap>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">Run on Türkay Biliyor’s iPhone</value>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">xcvario</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">Run xcvario on Türkay Biliyor’s iPhone</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qt4ProjectManager.IosRunConfiguration:/Users/tbiliyor/Desktop/XcVario/xcvario.pro</value>
     <value type="QString" key="RunConfiguration.Arguments"></value>
     <value type="uint" key="RunConfiguration.QmlDebugServerPort">3768</value>

@@ -43,9 +43,26 @@ public:
         return ((*(uint*)&value) & 0x7fffffff) > 0x7f800000;
     }
 
+    void clearDir( const QString path )
+    {
+        QDir dir( path );
+
+        dir.setFilter( QDir::NoDotAndDotDot | QDir::Files );
+        foreach( QString dirItem, dir.entryList() )
+            dir.remove( dirItem );
+
+        dir.setFilter( QDir::NoDotAndDotDot | QDir::Dirs );
+        foreach( QString dirItem, dir.entryList() )
+        {
+            QDir subDir( dir.absoluteFilePath( dirItem ) );
+            subDir.removeRecursively();
+        }
+    }
+
 private:
     void showEvent(QShowEvent *event);
-    void fillVario(qreal vario);
+    void fillVario();
+    void fillAltitude();
     void createTables();
     void updateIGC();
     void createIgcHeader();
@@ -99,6 +116,7 @@ private:
     qreal baroaltitude;
     qreal altitude;
     qreal vario;
+    qreal speed;
     qreal oldaltitude;
     QFile * igcFile;
 

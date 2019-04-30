@@ -9,6 +9,8 @@ MainWindow::MainWindow(QWidget *parent) :
     createIgcFile(false),
     pressure (101325.0),
     altitude (0),
+    vario (0),
+    speed (0),
     oldaltitude(0),
     ui(new Ui::MainWindow)
 {
@@ -35,6 +37,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->label_vario->setStyleSheet("font-size: 16pt; color: #cccccc; background-color: #001a1a;");
     ui->label_gps->setStyleSheet("font-size: 16pt; color: #cccccc; background-color: #001a1a;");
+    ui->label_altitude->setStyleSheet("font-size: 16pt; color: #cccccc; background-color: #001a1a;");
+
+    fillVario();
+    fillAltitude();
 
     varioBeep = new VarioBeep(750.0, static_cast<int>(DURATION_MS * 1000), this);
     varioBeep->setVolume(100);
@@ -181,7 +187,7 @@ void MainWindow::sensor_changed()
         vario = altitude_filter->GetXVel();
         varioBeep->SetVario(vario);
 
-        fillVario(vario);
+        fillVario();
     }
     else
     {
@@ -191,15 +197,29 @@ void MainWindow::sensor_changed()
     start = end;
 }
 
-void MainWindow::fillVario(qreal vario)
+void MainWindow::fillVario()
 {
     ui->label_vario->setText(
-                "<span style='font-size:110pt; font-weight:600;'>"
+                "<span style='font-size:110pt; font-weight:600; color:#FFDD33;'>"
                 + QString::number(vario, 'f', 1) +"</span>"
                 + "<span style='font-size:36pt; font-weight:600; color:#00cccc;'> m/s</span>"
                 );
 
 }
+
+void MainWindow::fillAltitude()
+{
+    ui->label_altitude->setText(
+                "<span style='font-size:70pt; font-weight:600; color:#F78181;'>"
+                + QString::number(speed, 'f', 1) +"</span>"
+                + "<span style='font-size:36pt; font-weight:600; color:#00cccc;'> km/h</span><br />"
+                + "<span style='font-size:70pt; font-weight:600; color:#F78181;'>"
+                + QString::number(altitude, 'f', 1) +"</span>"
+                + "<span style='font-size:36pt; font-weight:600; color:#00cccc;'> m</span>"
+                );
+
+}
+
 
 static QString satellitesToString(const QList<QGeoSatelliteInfo> &satellites)
 {
@@ -260,7 +280,7 @@ void MainWindow::positionUpdated(QGeoPositionInfo gpsPos)
 
     if(m_start)
     {
-        distance = m_coord.distanceTo(m_startCoord);
+        distance = m_coord.distanceTo(m_startCoord) / 1000;
     }
 
     auto m_latitude = m_coord.latitude();
@@ -272,6 +292,7 @@ void MainWindow::positionUpdated(QGeoPositionInfo gpsPos)
 
     auto m_groundSpeed = 3.6 * m_gpsPos.attribute(QGeoPositionInfo::GroundSpeed);
      if(IsNan(static_cast<float>(m_groundSpeed))) m_groundSpeed = 0;
+     speed = m_groundSpeed;
 
     auto m_verticalSpeed = m_gpsPos.attribute(QGeoPositionInfo::VerticalSpeed);
      if(IsNan(static_cast<float>(m_verticalSpeed))) m_verticalSpeed = 0;
@@ -291,21 +312,28 @@ void MainWindow::positionUpdated(QGeoPositionInfo gpsPos)
     text_igc_name = "VarioLog_" + local.toString("dd_MM_yyyy__hh_mm_ss") + ".igc";
 
     ui->label_gps->setText(
-                "<span style='font-size:22pt; font-weight:600;color:#00cccc;'>"
+                "<br /><span style='font-size:32pt; font-weight:600;color:#00cccc;'>"
                 + dateTimeString + "</span>" + "<br />"
-                + "<span style='font-size:22pt; font-weight:600; color:white;'>Altitude: "
+                + "<span style='font-size:18pt; font-weight:600; color:#F2EDED;'>Altitude: "
                 + QString::number(m_altitude, 'f', 1) + " m</span>" + "<br />"
-                + "<span style='font-size:22pt; font-weight:600; color:white;'>Speed: "
-                + QString::number(m_groundSpeed, 'f', 0) + " km/h</span>" + "<br />"
-                + "<span style='font-size:22pt; font-weight:600; color:white;'>Heading: "
+                + "<span style='font-size:18pt; font-weight:600; color:#F2EDED;'>Heading: "
                 + QString::number(m_direction, 'f', 0) + QObject::tr(" °") + "</span>" + "<br />"
-                + "<span style='font-size:22pt; font-weight:600; color:white;'>Distance: "
-                + QString::number(distance / 1000., 'f', 1) + " km</span>" + "<br />"
-                + "<span style='font-size:18pt; font-weight:600; color:#ff6600;'>"
+                + "<span style='font-size:18pt; font-weight:600; color:#F2EDED;'>Distance: "
+                + QString::number(distance, 'f', 1) + " km</span>" + "<br />"
+                + "<span style='font-size:18pt; font-weight:600; color:#FFC0C0;'>"
                 + QString("Latitude: %1").arg(m_latitude) + "</span>" + "<br />"
-                + "<span style='font-size:18pt; font-weight:600; color:#ff6600;'>"
-                + QString("Longitude: %1").arg(m_longitude) + "</span>"
+                + "<span style='font-size:18pt; font-weight:600; color:#FFC0C0;'>"
+                + QString("Longitude: %1").arg(m_longitude) + "</span>" + "<br />"
                 );
+
+    if(!m_sensorPressureValid)
+    {
+        altitude = m_altitude;
+        vario = m_verticalSpeed;
+        fillVario();
+    }
+
+    fillAltitude();
 
     updateIGC();
 }
@@ -448,6 +476,11 @@ void MainWindow::on_buttonStart_clicked()
             status.append(QString::number(count) + " - " + src + "<br />");
         }
         ui->label_gps->setText(status);
+        vario = 0;
+        altitude = 0;
+        speed = 0;
+        fillVario();
+        fillAltitude();
         m_running = false;
     }
     else
@@ -474,23 +507,6 @@ void MainWindow::exitApp()
 
 void MainWindow::on_buttonFile_clicked()
 {
-    /*auto fileName = QFileDialog::getOpenFileName(this, tr("Open Igc"), path, tr("Igc Files (*.igc)"));
-    QFileInfo info(fileName);
-    QFile igcFile(fileName);
-    igcFile.remove();*/
-    QFileDialog dialog;
-    dialog.setOption(QFileDialog::DontUseNativeDialog);
-
-    QWidget * fileNameEdit = dialog.findChild<QWidget *>("fileNameEdit");
-    //QWidget * fileNameEdit = dialog.findChild<QWidget *>(QStringLiteral("fileNameEdit"));
-    Q_ASSERT(fileNameEdit);
-    fileNameEdit->setVisible(false);
-    QWidget * fileNameLabel = dialog.findChild<QWidget *>("fileNameLabel");
-    fileNameLabel->setVisible(false);
-    QWidget * buttonBox = dialog.findChild<QWidget *>("buttonBox");
-    buttonBox->setVisible(false);
-
-    auto fileName = dialog.getOpenFileName(this, tr("Open Igc"), path, tr("Igc Files (*.igc)"));
-    QFile igcFile(fileName);
-    igcFile.remove();
+    clearDir(path);
+    auto fileName = QFileDialog::getOpenFileName(this, tr("Open Igc"), path, tr("Igc Files (*.igc)"));
 }
