@@ -3,6 +3,8 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
+    m_sensorPressureValid(false),
+    distance(0),
     m_running(false),
     createIgcFile(false),
     pressure (101325.0),
@@ -13,7 +15,19 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     setWindowTitle("XcVario");
 
+
+#ifdef Q_OS_ANDROID
+     path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + QString("/VarioLog/");
+#endif
+
+#ifdef Q_OS_WIN
+    path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + QString("/VarioLog/");
+#endif
+
+#ifdef Q_OS_IOS
     path = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + QString("/VarioLog/");
+#endif
+
     QDir dir;
 
     // We create the directory if needed
@@ -40,6 +54,22 @@ MainWindow::MainWindow(QWidget *parent) :
     }
     else
     {
+        QGeoSatelliteInfoSource *satelliteSource = QGeoSatelliteInfoSource::createDefaultSource(this);
+        if(satelliteSource)
+        {
+            QStringList sourcesList = QGeoSatelliteInfoSource::availableSources();
+            qDebug() << "Satellites sources count: " << sourcesList.count();
+            foreach (const QString &src, sourcesList) {
+                qDebug() << "source in list: " << src;
+            }
+
+            satelliteSource->startUpdates();
+            connect(satelliteSource, &QGeoSatelliteInfoSource::satellitesInViewUpdated,
+                    this, &MainWindow::satellitesInViewUpdated);
+        }
+
+        m_posSource->setPreferredPositioningMethods(QGeoPositionInfoSource::AllPositioningMethods);
+
         connect(m_posSource, &QGeoPositionInfoSource::positionUpdated, this, &MainWindow::positionUpdated);
 
         connect(m_posSource, SIGNAL(error(QGeoPositionInfoSource::Error)),
@@ -56,6 +86,7 @@ MainWindow::MainWindow(QWidget *parent) :
             status.append(QString::number(count) + " - " + src + "<br />");
         }
         ui->label_gps->setText(status);
+
     }
 }
 
@@ -91,6 +122,7 @@ void MainWindow::loadSensors()
             status.append(QString::number(count) + " - " + sensor_type + "<br />");
             if(sensor_type.contains("Pressure"))
             {
+                m_sensorPressureValid = true;
                 m_sensor = new QPressureSensor(this);
                 connect(m_sensor, SIGNAL(readingChanged()), this, SLOT(sensor_changed()));
                 m_sensor->setIdentifier(identifier);
@@ -171,32 +203,85 @@ void MainWindow::fillVario(qreal vario)
 
 }
 
+static QString satellitesToString(const QList<QGeoSatelliteInfo> &satellites)
+{
+    QString text;
+
+    foreach (const QGeoSatelliteInfo &info, satellites) {
+        text += QObject::tr("PRN: %1\nAzimuth: %2\nElevation: %3\nSignal: %4\n")
+                .arg(info.satelliteIdentifier())
+                .arg(info.attribute(QGeoSatelliteInfo::Azimuth))
+                .arg(info.attribute(QGeoSatelliteInfo::Elevation))
+                .arg(info.signalStrength());
+    }
+
+    return text;
+}
+
+void MainWindow::satellitesInUseUpdated(const QList<QGeoSatelliteInfo> &satellites)
+{
+    qDebug() << tr("satellitesInUseUpdated received");
+
+    ui->label_gps->setText(tr("Satellites In Use\n%1").arg(satellitesToString(satellites)));
+}
+
+void MainWindow::satellitesInViewUpdated(const QList<QGeoSatelliteInfo> &satellites)
+{
+    qDebug() << tr("satellitesInViewUpdated received");
+
+    ui->label_gps->setText(tr("Satellites In View\n%1").arg(satellitesToString(satellites)));
+}
+
 void MainWindow::positionUpdated(QGeoPositionInfo gpsPos)
 {
-    // Get the current location coordinates
-    QGeoCoordinate geoCoordinate =  gpsPos.coordinate();
-    qreal latitude = geoCoordinate.latitude();
-    qreal longitude = geoCoordinate.longitude();
+    if(!gpsPos.isValid())
+        return;
 
     m_gpsPos = gpsPos;
     m_coord = gpsPos.coordinate();
+
+    if(!m_start)
+    {
+        m_startCoord = gpsPos.coordinate();
+        m_start = true;
+    }
+
+    if(m_start)
+    {
+        distance = m_coord.distanceTo(m_startCoord);
+    }
+
+    auto m_latitude = m_gpsPos.coordinate().latitude();
+    auto m_longitude = m_gpsPos.coordinate().longitude();
+    auto m_altitude = m_gpsPos.coordinate().altitude();
+
+    auto m_direction = m_gpsPos.attribute(QGeoPositionInfo::Direction);
+    auto m_groundSpeed = m_gpsPos.attribute(QGeoPositionInfo::GroundSpeed);
+    auto m_verticalSpeed = m_gpsPos.attribute(QGeoPositionInfo::VerticalSpeed);
+    auto m_horizontalAccuracy = m_gpsPos.attribute(QGeoPositionInfo::HorizontalAccuracy);
+    auto m_verticalAccuracy = m_gpsPos.attribute(QGeoPositionInfo::VerticalAccuracy);
+    auto m_magneticVariation = m_gpsPos.attribute(QGeoPositionInfo::MagneticVariation);
+
     auto timestamp = gpsPos.timestamp();
     auto local = timestamp.toLocalTime();
-    auto gps_altitude = m_coord.altitude();
     auto dateTimeString = local.toString("hh : mm : ss");
     text_igc_name = "VarioLog_" + local.toString("dd_MM_yyyy__hh_mm_ss") + ".igc";
-    //ui->label_time->setText(dateTimeString + "\nAcc: " + QString::number(horizontalAccuracy, 'f', 1) + " m");
+
     ui->label_gps->setText(
-                "<span style='font-size:22pt; font-weight:600;color:#ff6600;'>"
+                "<span style='font-size:22pt; font-weight:600;color:#00cccc;'>"
                 + dateTimeString + "</span>" + "<br />"
                 + "<span style='font-size:22pt; font-weight:600; color:white;'>Altitude: "
-                + QString::number(gps_altitude, 'f', 1) + " m</span>" + "<br />"
-                + "<span style='font-size:22pt; font-weight:600; color:white;'>Pressure: "
-                + QString::number(pressure * 0.01, 'f', 1) + " hPa</span>" + "<br />"
-                + "<span style='font-size:18pt; font-weight:600; color:#ff6600;;'>"
-                + QString("Latitude: %1").arg(latitude) + "</span>" + "<br />"
-                + "<span style='font-size:18pt; font-weight:600; color:#ff6600;;'>"
-                + QString("Longitude: %1").arg(longitude) + "</span>"
+                + QString::number(m_altitude, 'f', 1) + " m</span>" + "<br />"
+                + "<span style='font-size:22pt; font-weight:600; color:white;'>Speed: "
+                + QString::number(m_groundSpeed, 'f', 0) + " km/h</span>" + "<br />"
+                + "<span style='font-size:22pt; font-weight:600; color:white;'>Heading: "
+                + QString::number(m_direction, 'f', 0) + QObject::tr(" °") + "</span>" + "<br />"
+                + "<span style='font-size:22pt; font-weight:600; color:white;'>Distance: "
+                + QString::number(distance / 1000, 'f', 1) + " km</span>" + "<br />"
+                + "<span style='font-size:18pt; font-weight:600; color:#ff6600;'>"
+                + QString("Latitude: %1").arg(m_latitude) + "</span>" + "<br />"
+                + "<span style='font-size:18pt; font-weight:600; color:#ff6600;'>"
+                + QString("Longitude: %1").arg(m_longitude) + "</span>"
                 );
 
     updateIGC();

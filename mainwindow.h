@@ -5,6 +5,8 @@
 #include <QPressureReading>
 #include <QGeoPositionInfo>
 #include <QGeoPositionInfoSource>
+#include <QGeoSatelliteInfoSource>
+#include <QGeoSatelliteInfo>
 #include <QStandardPaths>
 #include <QDateTime>
 #include <QtMath>
@@ -35,8 +37,13 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+    bool IsNan( float value )
+    {
+        return ((*(uint*)&value) & 0x7fffffff) > 0x7f800000;
+    }
+
 private:
-    void showEvent(QShowEvent *event);   
+    void showEvent(QShowEvent *event);
     void fillVario(qreal vario);
     void createTables();
     void updateIGC();
@@ -51,6 +58,8 @@ public slots:
     void errorChanged(QGeoPositionInfoSource::Error err);
     void loadSensors();
     void sensor_changed();
+    void satellitesInViewUpdated(const QList<QGeoSatelliteInfo> &infos);
+    void satellitesInUseUpdated(const QList<QGeoSatelliteInfo> &infos);
 
     void on_buttonStart_clicked();
     void on_pushButton_exit_clicked();
@@ -63,6 +72,11 @@ private:
     QGeoPositionInfoSource *m_posSource;
     QGeoPositionInfo m_gpsPos;
     QGeoCoordinate m_coord;
+    QGeoCoordinate m_startCoord;
+    bool m_start;
+    bool m_sensorPressureValid;
+    qreal distance;
+
     bool m_running;
     bool createIgcFile;
 
