@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <networkaccessmanager.h>
 #include <QPressureReading>
 #include <QGeoPositionInfo>
 #include <QGeoPositionInfoSource>
@@ -14,6 +15,7 @@
 #include <QDir>
 #include <QTimer>
 #include <QFileDialog>
+
 #include <QDebug>
 
 #include <qsensor.h>

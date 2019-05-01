@@ -79,7 +79,7 @@
          </size>
         </property>
         <property name="text">
-         <string>Delete Igc</string>
+         <string>Send Igc</string>
         </property>
        </widget>
       </item>

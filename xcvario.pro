@@ -1,4 +1,4 @@
-QT += core gui sensors positioning multimedia widgets
+QT += core gui sensors positioning multimedia widgets network
 
 TARGET = xcvario
 TEMPLATE = app
@@ -7,6 +7,7 @@ TEMPLATE = app
 SOURCES += main.cpp\
     kalmanfilter.cpp \
     mainwindow.cpp \
+    networkaccessmanager.cpp \
     variobeep.cpp \
     generator.cpp \
     piecewiselinearfunction.cpp
@@ -14,6 +15,7 @@ SOURCES += main.cpp\
 HEADERS  += \
     kalmanfilter.h \
     mainwindow.h \
+    networkaccessmanager.h \
     variobeep.h \
     generator.h \
     piecewiselinearfunction.h

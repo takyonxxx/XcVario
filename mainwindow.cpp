@@ -30,6 +30,8 @@ MainWindow::MainWindow(QWidget *parent) :
     path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + QString("/VarioLog/");
 #endif
 
+    qDebug() << path;
+
     QDir dir;
     // We create the directory if needed
     if (!dir.exists(path))
@@ -507,6 +509,11 @@ void MainWindow::exitApp()
 
 void MainWindow::on_buttonFile_clicked()
 {
-    clearDir(path);
+    //clearDir(path);
     auto fileName = QFileDialog::getOpenFileName(this, tr("Open Igc"), path, tr("Igc Files (*.igc)"));
+    QFile igcFile(fileName);
+    QUrl url = QUrl("http://www.paraglidingforum.com/modules/leonardo/flight_submit.php");
+
+    NetworkAccessManager *networkmanager = new NetworkAccessManager(url, this);
+    networkmanager->sendRequest(igcFile);
 }
