@@ -3,10 +3,14 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
+    varioBeep(nullptr),
+    m_posSource(nullptr),
+    m_nmeaSource(nullptr),
     m_sensorPressureValid(false),
-    distance(0),
+    m_start(false),
     m_running(false),
     createIgcFile(false),
+    distance(0),
     pressure (101325.0),
     altitude (0),
     vario (0),
@@ -30,70 +34,32 @@ MainWindow::MainWindow(QWidget *parent) :
     path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + QString("/VarioLog/");
 #endif
 
-    qDebug() << path;
-
-    QDir dir;
-    // We create the directory if needed
-    if (!dir.exists(path))
-        dir.mkpath(path); // You can check the success if needed
-
     ui->label_vario->setStyleSheet("font-size: 16pt; color: #cccccc; background-color: #001a1a;");
     ui->label_gps->setStyleSheet("font-size: 16pt; color: #cccccc; background-color: #001a1a;");
     ui->label_altitude->setStyleSheet("font-size: 16pt; color: #cccccc; background-color: #001a1a;");
+    ui->buttonStart->setEnabled(false);
 
-    fillVario();
-    fillAltitude();
+    startSensors();
 
-    varioBeep = new VarioBeep(750.0, static_cast<int>(DURATION_MS * 1000), this);
-    varioBeep->setVolume(100);
-
-    //Sensors
-    (void)QSensor::sensorTypes();
-    QSensor *sensor = new QSensor(QByteArray(), this);
-    connect(sensor, SIGNAL(availableSensorsChanged()), this, SLOT(loadSensors()));
-
-    //Gps
-    m_posSource = QGeoPositionInfoSource::createDefaultSource(this);
-
-    if (!m_posSource)
+    QString status;
+    if(!startGpsSource())
     {
-        ui->label_gps->setText("No Gps Position Source created!");
+        status.append("<span style='font-size:18pt; font-weight:600;color:#00cccc;'>No core gps source found!</span><br />");
+        ui->label_gps->setText(status);
+
+        if(!startNmeaSource())
+        {
+            status.append("<span style='font-size:18pt; font-weight:600;color:#00cccc;'>No nmea source found!</span>");
+            ui->label_gps->setText(status);
+        }
+        else
+        {
+            ui->buttonStart->setEnabled(true);
+        }
     }
     else
     {
-
-        m_posSource->setPreferredPositioningMethods(QGeoPositionInfoSource::AllPositioningMethods);
-
-        connect(m_posSource, &QGeoPositionInfoSource::positionUpdated, this, &MainWindow::positionUpdated);
-
-        connect(m_posSource, SIGNAL(error(QGeoPositionInfoSource::Error)),
-                this, SLOT(errorChanged(QGeoPositionInfoSource::Error)));
-
-        m_posSource->setUpdateInterval(0);
-
-        QString status;
-        status.append("<span style='font-size:18pt; font-weight:600;color:#00cccc;'>Available gps sources:</span><br />");
-        QStringList posSourcesList = QGeoPositionInfoSource::availableSources();
-        int count = 1;
-
-        foreach (const QString &src, posSourcesList) {
-            status.append(QString::number(count) + " - " + src + "<br />");
-        }
-        ui->label_gps->setText(status);
-
-        QGeoSatelliteInfoSource *satelliteSource = QGeoSatelliteInfoSource::createDefaultSource(this);
-        if(satelliteSource)
-        {
-            QStringList sourcesList = QGeoSatelliteInfoSource::availableSources();
-            qDebug() << "Satellites sources count: " << sourcesList.count();
-            foreach (const QString &src, sourcesList) {
-                qDebug() << "source in list: " << src;
-            }
-
-            satelliteSource->startUpdates();
-            connect(satelliteSource, &QGeoSatelliteInfoSource::satellitesInViewUpdated,
-                    this, &MainWindow::satellitesInViewUpdated);
-        }
+        ui->buttonStart->setEnabled(true);
     }
 }
 
@@ -104,6 +70,139 @@ MainWindow::~MainWindow()
         igcFile->close();
     }
     delete ui;
+}
+
+void MainWindow::startSensors()
+{
+    (void)QSensor::sensorTypes();
+    QSensor *sensor = new QSensor(QByteArray(), this);
+    connect(sensor, SIGNAL(availableSensorsChanged()), this, SLOT(loadSensors()));
+}
+
+bool MainWindow::startNmeaSource()
+{
+    auto serial = new QSerialPort(this);
+    QList<QSerialPortInfo> com_ports = QSerialPortInfo::availablePorts();
+
+    if (com_ports.isEmpty()) {
+        qWarning("serialnmea: No serial ports found");
+        return false;
+    }
+
+    QSet<int> supportedDevices;
+    supportedDevices << 0x67b;  // GlobalSat (BU-353S4 and probably others)
+    supportedDevices << 0xe8d;  // Qstarz MTK II
+    supportedDevices << 0x1546; // u-blox GNNS
+
+    QString portName;
+    QString vendorId;
+    bool deviceFound = false;
+    foreach (const QSerialPortInfo& port, com_ports) {
+        if (port.hasVendorIdentifier() && supportedDevices.contains(port.vendorIdentifier())) {
+            portName = port.portName();
+            vendorId = (port.hasVendorIdentifier()
+                        ? QByteArray::number(port.vendorIdentifier(), 16) : "no vendor id");
+            serial->setPortName(portName);
+            deviceFound = true;
+            break;
+        }
+    }
+
+    if(!deviceFound)
+        return false;
+
+    if(!serial->setBaudRate(QSerialPort::Baud4800))
+        qDebug() << serial->errorString();
+    if(!serial->setDataBits(QSerialPort::Data7))
+        qDebug() << serial->errorString();
+    if(!serial->setParity(QSerialPort::EvenParity))
+        qDebug() << serial->errorString();
+    if(!serial->setFlowControl(QSerialPort::HardwareControl))
+        qDebug() << serial->errorString();
+    if(!serial->setStopBits(QSerialPort::OneStop))
+        qDebug() << serial->errorString();
+
+    if (!serial->open(QIODevice::ReadOnly))
+    {
+        qWarning("Failed to open %s", qPrintable(serial->portName()));
+        serial->reset();
+        return false;
+    }
+
+    m_nmeaSource = new QNmeaPositionInfoSource(QNmeaPositionInfoSource::RealTimeMode, this);
+    if (m_nmeaSource == nullptr)
+    {
+        return false;
+    }
+
+    m_nmeaSource->setDevice(serial);
+    m_nmeaSource->setUpdateInterval(0);
+
+    QIODevice* dev = m_nmeaSource->device();
+    if(dev)
+    {
+        connect(m_nmeaSource, &QGeoPositionInfoSource::positionUpdated, this, &MainWindow::positionUpdated);
+        connect(m_nmeaSource, &QGeoPositionInfoSource::updateTimeout, this, &MainWindow::updateTimeout);
+        connect(m_nmeaSource, SIGNAL(error(QGeoPositionInfoSource::Error)), this, SLOT(errorChanged(QGeoPositionInfoSource::Error)));
+
+        QString status;
+        status.append("<span style='font-size:18pt; font-weight:600;color:#00cccc;'>Gps nmea device found</span><br />");
+        status.append("Port: " +  serial->portName() + " VendorId: " + vendorId);
+        ui->label_gps->setText(status);
+
+        /*while(serial->isOpen())
+        {
+            if(!serial->waitForReadyRead(-1)) //block until new data arrives
+                qDebug() << "error: " << serial->errorString();
+            else{
+                QByteArray datas = serial->readAll();
+                qDebug() << datas << "\n";
+            }
+        }*/
+    }
+    else
+    {
+        qDebug() << "failed to get device";
+        return false;
+    }
+
+    return true;
+}
+
+bool MainWindow::startGpsSource()
+{
+    m_posSource = QGeoPositionInfoSource::createDefaultSource(this);
+    if (m_posSource == nullptr)
+    {
+        return false;
+    }
+
+    if(!m_posSource->supportedPositioningMethods())
+    {
+        m_posSource = nullptr;
+        return false;
+    }
+
+    m_posSource->setPreferredPositioningMethods(QGeoPositionInfoSource::AllPositioningMethods);
+    m_posSource->setUpdateInterval(0);
+    connect(m_posSource, &QGeoPositionInfoSource::positionUpdated, this, &MainWindow::positionUpdated);
+    connect(m_posSource, &QGeoPositionInfoSource::updateTimeout, this, &MainWindow::updateTimeout);
+    connect(m_posSource, SIGNAL(error(QGeoPositionInfoSource::Error)), this, SLOT(errorChanged(QGeoPositionInfoSource::Error)));
+
+    QString status;
+    status.append("<span style='font-size:18pt; font-weight:600;color:#00cccc;'>Active Gps Source is:</span><br />");
+    status.append( m_posSource->sourceName() + "<br />");
+    ui->label_gps->setText(status);
+
+    QGeoSatelliteInfoSource *satelliteSource = QGeoSatelliteInfoSource::createDefaultSource(this);
+    if(satelliteSource)
+    {
+        satelliteSource->startUpdates();
+        connect(satelliteSource, &QGeoSatelliteInfoSource::satellitesInViewUpdated,
+                this, &MainWindow::satellitesInViewUpdated);
+    }
+
+    return true;
 }
 
 void MainWindow::loadSensors()
@@ -129,6 +228,10 @@ void MainWindow::loadSensors()
             if(sensor_type.contains("Pressure"))
             {
                 m_sensorPressureValid = true;
+
+                varioBeep = new VarioBeep(750.0, static_cast<int>(DURATION_MS * 1000), this);
+                varioBeep->setVolume(100);
+
                 m_sensor = new QPressureSensor(this);
                 connect(m_sensor, SIGNAL(readingChanged()), this, SLOT(sensor_changed()));
                 m_sensor->setIdentifier(identifier);
@@ -187,7 +290,8 @@ void MainWindow::sensor_changed()
         altitude_filter->Update(baroaltitude, KF_VAR_MEASUREMENT, dt);
         altitude = altitude_filter->GetXAbs();
         vario = altitude_filter->GetXVel();
-        varioBeep->SetVario(vario);
+        if(varioBeep)
+            varioBeep->SetVario(vario);
 
         fillVario();
     }
@@ -268,7 +372,7 @@ void MainWindow::satellitesInViewUpdated(const QList<QGeoSatelliteInfo> &satelli
 
 void MainWindow::positionUpdated(QGeoPositionInfo gpsPos)
 {
-    if(!gpsPos.isValid())
+    if (!gpsPos.isValid() || !gpsPos.coordinate().isValid())
         return;
 
     m_gpsPos = gpsPos;
@@ -287,26 +391,27 @@ void MainWindow::positionUpdated(QGeoPositionInfo gpsPos)
 
     auto m_latitude = m_coord.latitude();
     auto m_longitude = m_coord.longitude();
+    //if (m_coord.type() == QGeoCoordinate::Coordinate3D)
     auto m_altitude = m_coord.altitude();
 
     auto m_direction = m_gpsPos.attribute(QGeoPositionInfo::Direction);
     if(IsNan(static_cast<float>(m_direction))) m_direction = 0;
 
     auto m_groundSpeed = 3.6 * m_gpsPos.attribute(QGeoPositionInfo::GroundSpeed);
-     if(IsNan(static_cast<float>(m_groundSpeed))) m_groundSpeed = 0;
-     speed = m_groundSpeed;
+    if(IsNan(static_cast<float>(m_groundSpeed))) m_groundSpeed = 0;
+    speed = m_groundSpeed;
 
     auto m_verticalSpeed = m_gpsPos.attribute(QGeoPositionInfo::VerticalSpeed);
-     if(IsNan(static_cast<float>(m_verticalSpeed))) m_verticalSpeed = 0;
+    if(IsNan(static_cast<float>(m_verticalSpeed))) m_verticalSpeed = 0;
 
     auto m_horizontalAccuracy = m_gpsPos.attribute(QGeoPositionInfo::HorizontalAccuracy);
-     if(IsNan(static_cast<float>(m_horizontalAccuracy))) m_horizontalAccuracy = 0;
+    if(IsNan(static_cast<float>(m_horizontalAccuracy))) m_horizontalAccuracy = 0;
 
     auto m_verticalAccuracy = m_gpsPos.attribute(QGeoPositionInfo::VerticalAccuracy);
-     if(IsNan(static_cast<float>(m_verticalAccuracy))) m_verticalAccuracy = 0;
+    if(IsNan(static_cast<float>(m_verticalAccuracy))) m_verticalAccuracy = 0;
 
     auto m_magneticVariation = m_gpsPos.attribute(QGeoPositionInfo::MagneticVariation);
-     if(IsNan(static_cast<float>(m_magneticVariation))) m_magneticVariation = 0;
+    if(IsNan(static_cast<float>(m_magneticVariation))) m_magneticVariation = 0;
 
     auto timestamp = gpsPos.timestamp();
     auto local = timestamp.toLocalTime();
@@ -336,12 +441,17 @@ void MainWindow::positionUpdated(QGeoPositionInfo gpsPos)
     }
 
     fillAltitude();
-
     updateIGC();
+}
+
+void MainWindow::updateTimeout(void)
+{
+    qDebug() << "updateTimeout";
 }
 
 void MainWindow::errorChanged(QGeoPositionInfoSource::Error err)
 {
+    qDebug() << "errorChanged";
     qDebug() << (err == 3 ? QStringLiteral("No error") : QString::number(err));
 }
 
@@ -355,6 +465,10 @@ void MainWindow::updateIGC()
 {
     if(!createIgcFile)
     {
+        QDir dir;
+        if (!dir.exists(path))
+            dir.mkpath(path);
+
         QString sdate = QDate::currentDate().toString("ddMMyy");
         QString stime = QTime::currentTime().toString("hhmmss");
 
@@ -466,30 +580,33 @@ void MainWindow::on_buttonStart_clicked()
 {
     if (m_running)
     {
-        varioBeep->stopBeep();
-        m_posSource->stopUpdates();
-        ui->buttonStart->setText("Start");
-        QString status;
-        status.append("<span style='font-size:18pt; font-weight:600;color:#00cccc;'>Available gps sources:</span><br />");
-        QStringList posSourcesList = QGeoPositionInfoSource::availableSources();
-        int count = 1;
+        if(varioBeep)
+            varioBeep->stopBeep();
 
-        foreach (const QString &src, posSourcesList) {
-            status.append(QString::number(count) + " - " + src + "<br />");
-        }
-        ui->label_gps->setText(status);
+        if(m_posSource != nullptr)
+            m_posSource->stopUpdates();
+        else if(m_nmeaSource != nullptr)
+            m_nmeaSource->stopUpdates();
+
+        ui->buttonStart->setText("Start");
         vario = 0;
         altitude = 0;
         speed = 0;
-        fillVario();
-        fillAltitude();
         m_running = false;
     }
     else
     {
-        m_posSource->startUpdates();
-        varioBeep->SetVario(0.0);
-        varioBeep->startBeep();
+        if(m_posSource != nullptr)
+            m_posSource->startUpdates();
+        else if(m_nmeaSource != nullptr)
+            m_nmeaSource->startUpdates();
+
+        if(varioBeep)
+        {
+            varioBeep->SetVario(0.0);
+            varioBeep->startBeep();
+        }
+
         ui->buttonStart->setText("Stop");
         m_running = true;
     }
@@ -503,7 +620,8 @@ void MainWindow::on_pushButton_exit_clicked()
 
 void MainWindow::exitApp()
 {
-    varioBeep->stopBeep();
+    if(varioBeep)
+        varioBeep->stopBeep();
     qApp->quit();
 }
 

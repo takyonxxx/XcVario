@@ -80,8 +80,11 @@ void VarioBeep::createAudioOutput()
 
 void VarioBeep::startBeep()
 {
-    if(timerID)
+    if(timerID > 0)
+    {
         killTimer(timerID);
+        this->timerID = 0;
+    }
 
     timerID = startTimer(0);
     SetFrequency(m_toneSampleRateHz);
@@ -90,8 +93,11 @@ void VarioBeep::startBeep()
 
 void VarioBeep::stopBeep()
 {   
-    if(timerID)
+    if(timerID > 0)
+    {
         killTimer(timerID);
+        this->timerID = 0;
+    }
 
     m_running = false;
     m_audioOutput->stop();

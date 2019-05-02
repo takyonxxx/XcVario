@@ -1,4 +1,5 @@
-QT += core gui sensors positioning multimedia widgets network
+QT += core gui quick sensors positioning multimedia widgets
+QT += serialport network
 
 TARGET = xcvario
 TEMPLATE = app

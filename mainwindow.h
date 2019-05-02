@@ -2,12 +2,17 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <networkaccessmanager.h>
+#include <QQmlEngine>
+#include <QQmlComponent>
+
+#include <QSerialPort>
+#include <QSerialPortInfo>
 #include <QPressureReading>
 #include <QGeoPositionInfo>
 #include <QGeoPositionInfoSource>
 #include <QGeoSatelliteInfoSource>
 #include <QGeoSatelliteInfo>
+#include <QNmeaPositionInfoSource>
 #include <QStandardPaths>
 #include <QDateTime>
 #include <QtMath>
@@ -18,6 +23,7 @@
 
 #include <QDebug>
 
+#include <networkaccessmanager.h>
 #include <qsensor.h>
 #include <kalmanfilter.h>
 #include "variobeep.h"
@@ -63,14 +69,16 @@ public:
 
 private:
     void showEvent(QShowEvent *event);
+    bool startNmeaSource();
+    bool startGpsSource();
+    void startSensors();
     void fillVario();
     void fillAltitude();
     void createTables();
     void updateIGC();
     void createIgcHeader();
     QString decimalToDDDMMMMMLat(double angle);
-    QString decimalToDDDMMMMMLon(double angle);
-    QString path;
+    QString decimalToDDDMMMMMLon(double angle);   
 
 public slots:
     void positionUpdated(QGeoPositionInfo gpsPos);
@@ -80,12 +88,11 @@ public slots:
     void sensor_changed();
     void satellitesInViewUpdated(const QList<QGeoSatelliteInfo> &infos);
     void satellitesInUseUpdated(const QList<QGeoSatelliteInfo> &infos);
+    void updateTimeout(void);
 
     void on_buttonStart_clicked();
     void on_pushButton_exit_clicked();
     void exitApp();
-
-private slots:
     void on_buttonFile_clicked();
 
 private:
@@ -93,25 +100,30 @@ private:
     VarioBeep *varioBeep;
 
     QGeoPositionInfoSource *m_posSource;
+    QNmeaPositionInfoSource *m_nmeaSource;
     QGeoPositionInfo m_gpsPos;
     QGeoCoordinate m_coord;
     QGeoCoordinate m_startCoord;
-    bool m_start;
-    bool m_sensorPressureValid;
-    qreal distance;
 
+    bool m_sensorPressureValid;
+    bool m_start;
     bool m_running;
     bool createIgcFile;
 
     QPressureSensor *m_sensor;
     QPressureReading *pressure_reading;
+
+    QString path;
     QString text_presssure;
     QString text_igc_name;
+
     QDateTime start;
     QDateTime end;
 
     KalmanFilter *pressure_filter;
     KalmanFilter *altitude_filter;
+
+    qreal distance;
     qreal dt;
     qreal pressure;
     qreal temperature;
@@ -120,6 +132,7 @@ private:
     qreal vario;
     qreal speed;
     qreal oldaltitude;
+
     QFile * igcFile;
 
 private:
