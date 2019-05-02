@@ -39,6 +39,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->label_gps->setStyleSheet("font-size: 16pt; color: #cccccc; background-color: #001a1a;");
     ui->label_altitude->setStyleSheet("font-size: 16pt; color: #cccccc; background-color: #001a1a;");
     ui->label_gps->setWordWrap(true);
+    ui->label_gps->setTextInteractionFlags(Qt::TextBrowserInteraction);
+    connect(ui->label_gps, &QLabel::linkActivated, this, &MainWindow::on_gpsLabel_linkActivated);
+
     ui->buttonStart->setEnabled(false);
 
     startSensors();
@@ -683,22 +686,30 @@ void MainWindow::responseResult(const QString &result)
     else
     {
         ui->label_gps->setText(result);
+        qDebug() << result;
     }
 }
 
 void MainWindow::slotAcceptUserLogin(QString &user, QString &pass)
 {
-    this->user = user;
-    this->pass = pass;
-    saveSettings();
-
     if(user.isEmpty() || pass.isEmpty())
         return;
+
+    this->user = user;
+    this->pass = pass;
+
+    saveSettings();
 
     auto fileName = QFileDialog::getOpenFileName(this, tr("Open Igc"), path, tr("Igc Files (*.igc)"));
     QFile igcFile(fileName);
     if(networkmanager)
         networkmanager->sendRequest(user, pass, igcFile);
+}
+
+void MainWindow::on_gpsLabel_linkActivated(const QString & link)
+{
+    QDesktopServices::openUrl(QUrl(link));
+    qDebug() << link;
 }
 
 void MainWindow::on_buttonFile_clicked()
@@ -722,6 +733,7 @@ void MainWindow::on_buttonFile_clicked()
         }
     }
 
+    ui->label_gps->setText("-");
 
     m_SettingsFile = path + "settings.ini";
 
@@ -738,7 +750,7 @@ void MainWindow::on_buttonFile_clicked()
 
     igcFileName = QFileDialog::getOpenFileName(this, tr("Open Igc"), path, tr("Igc Files (*.igc)"));
     QFile igcFile(igcFileName);
-    if(networkmanager)
+    if(networkmanager && igcFile.exists())
     {
         ui->label_gps->setText("Sending igc file...");
         networkmanager->sendRequest(user, pass, igcFile);

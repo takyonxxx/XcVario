@@ -25,6 +25,7 @@
 #include <QDir>
 #include <QTimer>
 #include <QFileDialog>
+#include <QDesktopServices>
 
 #include <QDebug>
 
@@ -109,6 +110,7 @@ public slots:
     void slotAcceptUserLogin(QString&,QString&);
     void invalidUser();
     void responseResult(const QString &result);
+    void on_gpsLabel_linkActivated(const QString & link);
 
     void on_buttonStart_clicked();
     void on_pushButton_exit_clicked();
