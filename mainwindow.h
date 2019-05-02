@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QQmlEngine>
 #include <QQmlComponent>
+#include <QSettings>
 
 #include <QSerialPort>
 #include <QSerialPortInfo>
@@ -27,7 +28,7 @@
 #include <qsensor.h>
 #include <kalmanfilter.h>
 #include "variobeep.h"
-
+#include "logindialog.h"
 
 #define KF_VAR_ACCEL 0.0075 // Variance of pressure acceleration noise input.
 #define KF_VAR_MEASUREMENT 0.05
@@ -77,6 +78,10 @@ private:
     void createTables();
     void updateIGC();
     void createIgcHeader();
+    void loadSettings();
+    void saveSettings();
+    void openLoginDialog();
+
     QString decimalToDDDMMMMMLat(double angle);
     QString decimalToDDDMMMMMLon(double angle);   
 
@@ -89,6 +94,8 @@ public slots:
     void satellitesInViewUpdated(const QList<QGeoSatelliteInfo> &infos);
     void satellitesInUseUpdated(const QList<QGeoSatelliteInfo> &infos);
     void updateTimeout(void);
+    void slotAcceptUserLogin(QString&,QString&);
+    void invalidUser();
 
     void on_buttonStart_clicked();
     void on_pushButton_exit_clicked();
@@ -98,6 +105,7 @@ public slots:
 private:
 
     VarioBeep *varioBeep;
+    NetworkAccessManager *networkmanager;
 
     QGeoPositionInfoSource *m_posSource;
     QNmeaPositionInfoSource *m_nmeaSource;
@@ -113,6 +121,9 @@ private:
     QPressureSensor *m_sensor;
     QPressureReading *pressure_reading;
 
+    QString m_SettingsFile;
+    QString user;
+    QString pass;
     QString path;
     QString text_presssure;
     QString text_igc_name;

@@ -5,6 +5,7 @@
 #include <QNetworkReply>
 #include <QUrlQuery>
 #include <QFile>
+#include <QFileInfo>
 
 class NetworkAccessManager :public QObject
 {
@@ -12,7 +13,7 @@ class NetworkAccessManager :public QObject
 
 public:
     NetworkAccessManager(QUrl &url, QObject* parent);
-    void sendRequest(const QFile &file);
+    void sendRequest(const QString &user, const QString &pass, QFile &file);
 
 private:
     QNetworkAccessManager * manager;
@@ -20,6 +21,8 @@ private:
 
 public slots:
     void replyFinished(QNetworkReply *reply);
+signals:
+    void invalidUser();
 };
 
 #endif // NETWORKACCESSMANAGER_H

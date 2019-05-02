@@ -4,6 +4,7 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     varioBeep(nullptr),
+    networkmanager(nullptr),
     m_posSource(nullptr),
     m_nmeaSource(nullptr),
     m_sensorPressureValid(false),
@@ -61,6 +62,13 @@ MainWindow::MainWindow(QWidget *parent) :
     {
         ui->buttonStart->setEnabled(true);
     }
+
+    //QUrl url = QUrl("http://xc.dhv.de/xc/modules/leonardo/flight_submit.php");
+    //QUrl url = QUrl("http://www.paraglidingforum.com/modules/leonardo/flight_submit.php");
+    QUrl url = QUrl("http://www.ypforum.com/modules/leonardo/flight_submit.php");
+
+    networkmanager = new NetworkAccessManager(url, this);
+    connect(networkmanager, &NetworkAccessManager::invalidUser, this, &MainWindow::invalidUser);
 }
 
 MainWindow::~MainWindow()
@@ -194,13 +202,13 @@ bool MainWindow::startGpsSource()
     status.append( m_posSource->sourceName() + "<br />");
     ui->label_gps->setText(status);
 
-    QGeoSatelliteInfoSource *satelliteSource = QGeoSatelliteInfoSource::createDefaultSource(this);
+    /*QGeoSatelliteInfoSource *satelliteSource = QGeoSatelliteInfoSource::createDefaultSource(this);
     if(satelliteSource)
     {
         satelliteSource->startUpdates();
         connect(satelliteSource, &QGeoSatelliteInfoSource::satellitesInViewUpdated,
                 this, &MainWindow::satellitesInViewUpdated);
-    }
+    }*/
 
     return true;
 }
@@ -625,13 +633,68 @@ void MainWindow::exitApp()
     qApp->quit();
 }
 
+void MainWindow::loadSettings()
+{
+    QSettings settings(m_SettingsFile, QSettings::IniFormat);
+    user = settings.value("user", "").toString();
+    pass = settings.value("pass", "").toString();
+}
+
+void MainWindow::saveSettings()
+{
+    QSettings settings(m_SettingsFile, QSettings::IniFormat);
+    settings.setValue("user", user);
+    settings.setValue("pass", pass);
+}
+
+void MainWindow::openLoginDialog()
+{
+    LoginDialog* loginDialog = new LoginDialog( this );
+    connect( loginDialog,
+             &LoginDialog::acceptLogin,
+             this,
+             &MainWindow::slotAcceptUserLogin);
+    loginDialog->exec();
+}
+
+void MainWindow::invalidUser()
+{
+    openLoginDialog();
+}
+
+void MainWindow::slotAcceptUserLogin(QString &user, QString &pass)
+{
+    this->user = user;
+    this->pass = pass;
+    saveSettings();
+
+    if(user.isEmpty() || pass.isEmpty())
+        return;
+
+    auto fileName = QFileDialog::getOpenFileName(this, tr("Open Igc"), path, tr("Igc Files (*.igc)"));
+    QFile igcFile(fileName);
+    if(networkmanager)
+        networkmanager->sendRequest(user, pass, igcFile);
+}
+
 void MainWindow::on_buttonFile_clicked()
 {
     //clearDir(path);
+    m_SettingsFile = QCoreApplication::applicationDirPath() + "/settings.ini";
+
+    if (QFile(m_SettingsFile).exists())
+    {
+        loadSettings();
+    }
+
+    if(user.isEmpty() || pass.isEmpty())
+    {
+        openLoginDialog();
+        return;
+    }
+
     auto fileName = QFileDialog::getOpenFileName(this, tr("Open Igc"), path, tr("Igc Files (*.igc)"));
     QFile igcFile(fileName);
-    QUrl url = QUrl("http://www.paraglidingforum.com/modules/leonardo/flight_submit.php");
-
-    NetworkAccessManager *networkmanager = new NetworkAccessManager(url, this);
-    networkmanager->sendRequest(igcFile);
+    if(networkmanager)
+        networkmanager->sendRequest(user, pass, igcFile);
 }

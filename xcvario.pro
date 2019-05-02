@@ -7,6 +7,7 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
     kalmanfilter.cpp \
+    logindialog.cpp \
     mainwindow.cpp \
     networkaccessmanager.cpp \
     variobeep.cpp \
@@ -15,6 +16,7 @@ SOURCES += main.cpp\
 
 HEADERS  += \
     kalmanfilter.h \
+    logindialog.h \
     mainwindow.h \
     networkaccessmanager.h \
     variobeep.h \

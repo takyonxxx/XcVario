@@ -10,11 +10,24 @@ NetworkAccessManager::NetworkAccessManager(QUrl &url, QObject* parent):
     connect(manager, &QNetworkAccessManager::finished, this, &NetworkAccessManager::replyFinished);
 }
 
-void NetworkAccessManager::sendRequest(const QFile &file)
+void NetworkAccessManager::sendRequest(const QString &user, const QString &pass, QFile &file)
 {
     QUrlQuery params;
-    params.addQueryItem("user", "username");
-    params.addQueryItem("pass", "password");
+    QFileInfo fileInfo(file);
+
+    if(!file.open(QIODevice::ReadOnly))
+    {
+        qDebug() << file.errorString();
+        return;
+    }
+
+    QTextStream  in(&file);
+
+    params.addQueryItem("user", user);
+    params.addQueryItem("pass", pass);
+    params.addQueryItem("igcfn", fileInfo.fileName().remove(".igc"));
+    params.addQueryItem("Klasse", "3");
+    params.addQueryItem("IGCigcIGC", in.readAll());
 
     manager->post(request, params.query().toUtf8());
 }
@@ -29,6 +42,8 @@ void NetworkAccessManager::replyFinished(QNetworkReply *reply)
     else
     {
         QString data = (QString) reply->readAll();
+        if(data.contains("Invalid user data"))
+            emit invalidUser();
         qDebug() << data;
     }
 }
