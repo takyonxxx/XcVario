@@ -5,9 +5,13 @@
 #include <QQmlEngine>
 #include <QQmlComponent>
 #include <QSettings>
+#include <QMessageBox>
 
+ #ifdef Q_OS_WIN
 #include <QSerialPort>
 #include <QSerialPortInfo>
+#endif
+
 #include <QPressureReading>
 #include <QGeoPositionInfo>
 #include <QGeoPositionInfoSource>
@@ -68,6 +72,14 @@ public:
         }
     }
 
+    static void SetTextToLabel(QLabel *label, QString text)
+    {
+        QFontMetrics metrix(label->font());
+        int width = label->width() - 2;
+        QString clippedText = metrix.elidedText(text, Qt::ElideRight, width);
+        label->setText(clippedText);
+    }
+
 private:
     void showEvent(QShowEvent *event);
     bool startNmeaSource();
@@ -96,6 +108,7 @@ public slots:
     void updateTimeout(void);
     void slotAcceptUserLogin(QString&,QString&);
     void invalidUser();
+    void responseResult(const QString &result);
 
     void on_buttonStart_clicked();
     void on_pushButton_exit_clicked();
@@ -122,6 +135,7 @@ private:
     QPressureReading *pressure_reading;
 
     QString m_SettingsFile;
+    QString igcFileName;
     QString user;
     QString pass;
     QString path;

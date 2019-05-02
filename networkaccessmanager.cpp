@@ -44,7 +44,8 @@ void NetworkAccessManager::replyFinished(QNetworkReply *reply)
         QString data = (QString) reply->readAll();
         if(data.contains("Invalid user data"))
             emit invalidUser();
-        qDebug() << data;
+
+        emit responseResult(data.remove("problem"));//.remove(QRegExp("<[^>]*>")).remove("problem"));
     }
 }
 

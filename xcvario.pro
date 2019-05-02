@@ -1,5 +1,8 @@
-QT += core gui quick sensors positioning multimedia widgets
-QT += serialport network
+QT += core gui quick sensors positioning multimedia widgets network
+
+win{
+QT += serialport
+}
 
 TARGET = xcvario
 TEMPLATE = app
@@ -29,7 +32,7 @@ FORMS    += \
 RESOURCES += \
     resources.qrc
 
-win32:RC_ICONS += $$PWD\appIcon.ico
+win:RC_ICONS += $$PWD\appIcon.ico
 
 ios {
 QMAKE_INFO_PLIST = ios/Info.plist

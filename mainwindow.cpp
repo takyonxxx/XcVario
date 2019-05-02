@@ -38,6 +38,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->label_vario->setStyleSheet("font-size: 16pt; color: #cccccc; background-color: #001a1a;");
     ui->label_gps->setStyleSheet("font-size: 16pt; color: #cccccc; background-color: #001a1a;");
     ui->label_altitude->setStyleSheet("font-size: 16pt; color: #cccccc; background-color: #001a1a;");
+    ui->label_gps->setWordWrap(true);
     ui->buttonStart->setEnabled(false);
 
     startSensors();
@@ -48,6 +49,7 @@ MainWindow::MainWindow(QWidget *parent) :
         status.append("<span style='font-size:18pt; font-weight:600;color:#00cccc;'>No core gps source found!</span><br />");
         ui->label_gps->setText(status);
 
+#ifdef Q_OS_WIN
         if(!startNmeaSource())
         {
             status.append("<span style='font-size:18pt; font-weight:600;color:#00cccc;'>No nmea source found!</span>");
@@ -57,6 +59,7 @@ MainWindow::MainWindow(QWidget *parent) :
         {
             ui->buttonStart->setEnabled(true);
         }
+#endif
     }
     else
     {
@@ -64,11 +67,12 @@ MainWindow::MainWindow(QWidget *parent) :
     }
 
     //QUrl url = QUrl("http://xc.dhv.de/xc/modules/leonardo/flight_submit.php");
-    //QUrl url = QUrl("http://www.paraglidingforum.com/modules/leonardo/flight_submit.php");
-    QUrl url = QUrl("http://www.ypforum.com/modules/leonardo/flight_submit.php");
+    QUrl url = QUrl("http://www.paraglidingforum.com/modules/leonardo/flight_submit.php");
+    //QUrl url = QUrl("http://www.ypforum.com/modules/leonardo/flight_submit.php");
 
     networkmanager = new NetworkAccessManager(url, this);
     connect(networkmanager, &NetworkAccessManager::invalidUser, this, &MainWindow::invalidUser);
+    connect(networkmanager, &NetworkAccessManager::responseResult, this, &MainWindow::responseResult);
 }
 
 MainWindow::~MainWindow()
@@ -89,6 +93,7 @@ void MainWindow::startSensors()
 
 bool MainWindow::startNmeaSource()
 {
+#ifdef Q_OS_WIN
     auto serial = new QSerialPort(this);
     QList<QSerialPortInfo> com_ports = QSerialPortInfo::availablePorts();
 
@@ -173,6 +178,7 @@ bool MainWindow::startNmeaSource()
         qDebug() << "failed to get device";
         return false;
     }
+#endif
 
     return true;
 }
@@ -532,10 +538,14 @@ void MainWindow::createIgcHeader()
 
     QDateTime timestamp = m_gpsPos.timestamp();
     QString dateString = timestamp.toString("ddMMyy");
+    loadSettings();
 
     QString header  = "AXGD000 XcVario v1.0\n";
     header.append("HFDTE" + dateString + "\n");
+    header.append("HOPLTPILOT:" + user + "\n");
+    header.append("HOGTYGLIDERTYPE:" + QString("Coden Pro") + "\n");
     header.append("HODTM100GPSDATUM: WGS-84\n");
+    header.append("HOCCLCOMPETITION CLASS:" + QString("CCC") + "\n");
     header.append("HFFTYFRTYPE: XcVario by Türkay Biliyor");
     out << header << endl;
     igcFile->close();
@@ -662,6 +672,20 @@ void MainWindow::invalidUser()
     openLoginDialog();
 }
 
+void MainWindow::responseResult(const QString &result)
+{
+    if(result.contains("This is not a valid .igc file"))
+    {
+        QFile igcFile(igcFileName);
+        igcFile.remove();
+        ui->label_gps->setText("This is not a valid .igc file\nFile deleted." );
+    }
+    else
+    {
+        ui->label_gps->setText(result);
+    }
+}
+
 void MainWindow::slotAcceptUserLogin(QString &user, QString &pass)
 {
     this->user = user;
@@ -679,8 +703,27 @@ void MainWindow::slotAcceptUserLogin(QString &user, QString &pass)
 
 void MainWindow::on_buttonFile_clicked()
 {
-    //clearDir(path);
-    m_SettingsFile = QCoreApplication::applicationDirPath() + "/settings.ini";
+    if (m_running)
+    {
+        QMessageBox msgBox;
+        msgBox.setWindowTitle("Track Log");
+        msgBox.setText("Track log will be stopped. Are you sure?");
+        msgBox.setStandardButtons(QMessageBox::Yes);
+        msgBox.addButton(QMessageBox::No);
+        msgBox.setDefaultButton(QMessageBox::No);
+        if(msgBox.exec() == QMessageBox::Yes)
+        {
+            on_buttonStart_clicked();
+
+        }
+        else
+        {
+            return;
+        }
+    }
+
+
+    m_SettingsFile = path + "settings.ini";
 
     if (QFile(m_SettingsFile).exists())
     {
@@ -693,8 +736,11 @@ void MainWindow::on_buttonFile_clicked()
         return;
     }
 
-    auto fileName = QFileDialog::getOpenFileName(this, tr("Open Igc"), path, tr("Igc Files (*.igc)"));
-    QFile igcFile(fileName);
+    igcFileName = QFileDialog::getOpenFileName(this, tr("Open Igc"), path, tr("Igc Files (*.igc)"));
+    QFile igcFile(igcFileName);
     if(networkmanager)
+    {
+        ui->label_gps->setText("Sending igc file...");
         networkmanager->sendRequest(user, pass, igcFile);
+    }
 }

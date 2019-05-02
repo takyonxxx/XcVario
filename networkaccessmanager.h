@@ -23,6 +23,7 @@ public slots:
     void replyFinished(QNetworkReply *reply);
 signals:
     void invalidUser();
+    void responseResult(const QString &result);
 };
 
 #endif // NETWORKACCESSMANAGER_H
