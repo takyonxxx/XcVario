@@ -1,5 +1,5 @@
 # XcVario
-Variometer software developed by qt 5 c++ for android linux ios 
+Variometer software developed with qt 5 c++ for android linux ios 
 
 App will need barometric and gps sensor on device.
 
